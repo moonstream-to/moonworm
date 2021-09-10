@@ -1,18 +1,30 @@
-import json
-from hexbytes.main import HexBytes
+from dataclasses import dataclass
+from os import name
+from typing import Any, Dict, List, Optional, Tuple
 
+from eth_typing.evm import ChecksumAddress
+import web3
 from web3 import Web3
-from .generator import generate_contract_file
-
-f = open("centipede/abi.json")
-abi = json.load(f)
-IPC_PATH = "http://127.0.0.1:18375"
+from web3.contract import Contract
+from web3.types import ABIEvent, ABIFunction
 
 
-w3 = Web3(Web3.HTTPProvider(IPC_PATH))
-contract = w3.eth.contract(
-    abi=abi, address=w3.toChecksumAddress("0x06012c8cf97bead5deae237070f9587f8e7a266d")
-)
-print(type(contract.functions.getKitty(1).call()))
+def init_web3(ipc_path: str) -> Web3:
+    return web3.HTTPProvider(ipc_path)
 
-generate_contract_file("0x06012c8cf97bead5deae237070f9587f8e7a266d", abi)
+
+def init_contract(web3: Web3, abi: Dict[str, Any], address: Optional[str]) -> Contract:
+    checksum_address: Optional[ChecksumAddress] = None
+    if address is not None:
+        checksum_address = web3.toChecksumAddress(address)
+    return web3.eth.contract(address=checksum_address, abi=abi)
+
+
+def abi_show(abi: Dict[str, Any]) -> Tuple[List[ABIFunction], List[ABIEvent]]:
+    abi_functions = [item for item in abi if item["type"] == "function"]
+    abi_events = [item for item in abi if item["type"] == "event"]
+    return (abi_functions, abi_events)
+
+
+def call_function(contract: Contract, function_name, *args) -> Any:
+    contract.functions[function_name]().call(*args)

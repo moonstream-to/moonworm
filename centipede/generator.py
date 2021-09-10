@@ -6,6 +6,7 @@ from typing import Any, Dict, Union
 import libcst as cst
 from eth_typing.evm import Address, ChecksumAddress
 from libcst._nodes.statement import SimpleStatementLine
+from libcst._parser.entrypoints import parse_statement
 
 CONTRACT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "contract.py.template")
 try:
@@ -39,7 +40,7 @@ EVM_PYTHON_TYPE_MAPPINGS = {
     "uint256": make_annotation(["int"]),
     "uint8": make_annotation(["int"]),
     "uint": make_annotation(["int"]),
-    "bytes4": make_annotation(["str"]),
+    "bytes4": make_annotation(["bytes"]),
     "string": make_annotation(["str"]),
     "address": make_annotation(["Address", "ChecksumAddress"]),
 }
@@ -54,8 +55,9 @@ def generate_contract_class(
         body=cst.IndentedBlock(
             body=[
                 cst.parse_statement("self.web3 = web3"),
+                cst.parse_statement("self.address = contract_address"),
                 cst.parse_statement(
-                    "self.contract = web3.eth.contract(address=web3.toChecksumAddress(CONTRACT_ADDRESS), abi=CONTRACT_ABI)"
+                    "self.contract = web3.eth.contract(address=self.address, abi=CONTRACT_ABI)"
                 ),
             ]
         ),
@@ -65,6 +67,10 @@ def generate_contract_class(
                 cst.Param(
                     name=cst.Name("web3"),
                     annotation=cst.Annotation(annotation=cst.Name("Web3")),
+                ),
+                cst.Param(
+                    name=cst.Name("contract_address"),
+                    annotation=make_annotation(["Address", "ChecksumAddress"]),
                 ),
             ]
         ),
@@ -117,14 +123,17 @@ def generate_contract_function(
     )
 
 
-def generate_contract_file(address: str, abi: Dict[str, Any]):
+def generate_contract_file(abi: Dict[str, Any], output_path: str):
     contract_body = cst.Module(body=[generate_contract_class(abi)]).code
 
-    JSON_FILE_PATH = "abi.json"
+    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
+
     content = REPORTER_FILE_TEMPLATE.format(
-        abi_json=JSON_FILE_PATH, contract_body=contract_body, contract_address=address
+        abi_json=JSON_FILE_PATH,
+        contract_body=contract_body,
     )
-    with open("lol.py", "w") as ofp:
+    contract_file_path = os.path.join(output_path, "lol.py")
+    with open(contract_file_path, "w") as ofp:
         ofp.write(content)
 
     with open(JSON_FILE_PATH, "w") as ofp:
