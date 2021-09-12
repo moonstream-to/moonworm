@@ -4,9 +4,8 @@ import os
 from typing import Any, Dict, Union
 
 import libcst as cst
-from eth_typing.evm import Address, ChecksumAddress
-from libcst._nodes.statement import SimpleStatementLine
-from libcst._parser.entrypoints import parse_statement
+
+from .version import CENTIPEDE_VERSION
 
 CONTRACT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "contract.py.template")
 try:
@@ -131,6 +130,7 @@ def generate_contract_file(abi: Dict[str, Any], output_path: str):
     content = REPORTER_FILE_TEMPLATE.format(
         abi_json=JSON_FILE_PATH,
         contract_body=contract_body,
+        centipede_version=CENTIPEDE_VERSION,
     )
     contract_file_path = os.path.join(output_path, "lol.py")
     with open(contract_file_path, "w") as ofp:
@@ -138,3 +138,7 @@ def generate_contract_file(abi: Dict[str, Any], output_path: str):
 
     with open(JSON_FILE_PATH, "w") as ofp:
         ofp.write(json.dumps(abi))
+
+
+def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
+    pass
