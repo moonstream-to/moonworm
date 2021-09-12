@@ -3,13 +3,19 @@ import json
 import os
 
 from . import manage
-from .generator import generate_contract_file
+from .generator import generate_contract_cli_file, generate_contract_file
 
 
 def handle_genereate_interface(args: argparse.Namespace) -> None:
     with open(args.abi, "r") as ifp:
         contract_abi = json.load(ifp)
     generate_contract_file(contract_abi, args.output_path)
+
+
+def handle_genereate_cli(args: argparse.Namespace) -> None:
+    with open(args.abi, "r") as ifp:
+        contract_abi = json.load(ifp)
+    generate_contract_cli_file(contract_abi, args.output_path)
 
 
 def handle_contract_show(args: argparse.Namespace) -> None:
@@ -101,6 +107,12 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     populate_generate_leaf_parsers(generate_interface)
     generate_interface.set_defaults(func=handle_genereate_interface)
 
+    generate_cli = genereate_subcommands.add_parser(
+        "cli",
+        description="Generate python cli for smart contract",
+    )
+    populate_generate_leaf_parsers(generate_cli)
+    generate_cli.set_defaults(func=handle_genereate_cli)
     return parser
 
 

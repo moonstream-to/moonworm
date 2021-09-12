@@ -3,8 +3,7 @@
 
 import argparse
 import json
-import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from eth_typing.evm import Address, ChecksumAddress
 import web3
@@ -13,7 +12,7 @@ from web3.contract import Contract
 
 
 def init_web3(ipc_path: str) -> Web3:
-    return web3.HTTPProvider(ipc_path)
+    return Web3(web3.HTTPProvider(ipc_path))
 
 
 def init_contract(web3: Web3, abi: Dict[str, Any], address: Optional[str]) -> Contract:
@@ -23,34 +22,94 @@ def init_contract(web3: Web3, abi: Dict[str, Any], address: Optional[str]) -> Co
     return web3.eth.contract(address=checksum_address, abi=abi)
 
 
+def load_abi(abi_path: str):
+    with open("abi.json", "r") as ifp:
+        abi = json.load(ifp)
+    return abi
+
+
 def make_function_call(contract: Contract, function_name: str, *args):
-    contract.functions[function_name](*args).call()
+    return contract.functions[function_name](*args).call()
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Your smart contract cli")
-    subcommands = parser.add_subparsers(
-        dest="subcommand",
-    )
-    call = subcommands.add_parser("call", description="Call smart contract function")
-    call_subcommands = call.add_subparsers(
-        dest="fn_name",
-    )
-    my_fn = call_subcommands.add_parser("my_fn", description="My fn call")
-    my_fn.add_argument("name")
-    my_fn.add_argument("surname")
 
-    my_fn2 = call_subcommands.add_parser("my_fn2", description="My fn2 call")
-    my_fn2.add_argument("name2")
-    my_fn2.add_argument("surname2")
+    subcommands = parser.add_subparsers(dest="subcommand", required=True)
+    call = subcommands.add_parser(
+        "call",
+        description="Call smart contract function",
+    )
+    call_subcommands = call.add_subparsers(dest="function_name", required=True)
+    my_fn = call_subcommands.add_parser("ownerOf", description="My fn call")
+    my_fn.add_argument("tokenId")
+    my_fn.add_argument("--web3")
+    my_fn.add_argument("--contract_address")
+
+    my_fn2 = call_subcommands.add_parser("name", description="My fn2 call")
+    my_fn2.add_argument("--web3")
+    my_fn2.add_argument("--contract_address")
 
     return parser
+
+
+common_keys = ["web3"]
+
+
+def python_type(evm_type: str) -> Callable:
+    if evm_type.startswith(("uint", "int")):
+        return int
+    elif evm_type.startswith("bytes"):
+        return bytes
+    elif evm_type == "string":
+        return str
+    elif evm_type == "address":
+        return str
+    elif evm_type == "bool":
+        return bool
+    else:
+        raise ValueError(f"Cannot convert to python type {evm_type}")
+
+
+CONTRACT_FUNCTIONS = {
+    "ownerOf": {
+        "inputs": [
+            {"name": "tokenId", "type": "uint256"},
+        ]
+    },
+    "name": {"inputs": []},
+}
+
+
+def handle_args(args: argparse.Namespace):
+    # Initializng contract
+    web3 = init_web3(args.web3)
+    contract_address = web3.toChecksumAddress(args.contract_address)
+    abi = load_abi("abi.json")
+    contract = web3.eth.contract(address=contract_address, abi=abi)
+    kwargs = vars(args)
+
+    for key in common_keys:
+        try:
+            del kwargs[key]
+        except KeyError:
+            continue
+
+    if args.subcommand == "call":
+        function_name = kwargs["function_name"]
+        del kwargs["function_name"]
+        call_args = [
+            python_type(f_arg["type"])(kwargs[f_arg["name"]])
+            for f_arg in CONTRACT_FUNCTIONS[function_name]["inputs"]
+        ]
+        print(call_args)
+        print(make_function_call(contract, function_name, *call_args))
 
 
 def main() -> None:
     parser = generate_argument_parser()
     args = parser.parse_args()
-    print(args)
+    handle_args(args)
 
 
 if __name__ == "__main__":

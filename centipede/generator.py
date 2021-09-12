@@ -1,9 +1,10 @@
 import json
 import logging
 import os
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import libcst as cst
+from web3.types import ABIFunction
 
 from .version import CENTIPEDE_VERSION
 
@@ -11,6 +12,16 @@ CONTRACT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "contract.py.te
 try:
     with open(CONTRACT_TEMPLATE_PATH, "r") as ifp:
         REPORTER_FILE_TEMPLATE = ifp.read()
+except Exception as e:
+    logging.warn(
+        f"WARNING: Could not load reporter template from {CONTRACT_TEMPLATE_PATH}:"
+    )
+    logging.warn(e)
+
+CLI_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "cli.py.template")
+try:
+    with open(CLI_TEMPLATE_PATH, "r") as ifp:
+        CLI_FILE_TEMPLATE = ifp.read()
 except Exception as e:
     logging.warn(
         f"WARNING: Could not load reporter template from {CONTRACT_TEMPLATE_PATH}:"
@@ -140,5 +151,42 @@ def generate_contract_file(abi: Dict[str, Any], output_path: str):
         ofp.write(json.dumps(abi))
 
 
+def generate_function_subparser(
+    function_abi: ABIFunction,
+    description: str,
+) -> List[cst.SimpleStatementLine]:
+    function_name = function_abi["name"]
+    subparser_init = cst.parse_statement(
+        f'{function_name} = call_subcommands.add_parser("{function_name}", description="{description}")'
+    )
+    argument_parsers = []
+    # TODO(yhtiyar): Functions can have the same name, we will need to ressolve it
+    for arg in function_abi["inputs"]:
+        argument_parsers.append(
+            cst.parse_statement(f'{function_name}.add_argument("{arg["name"]}")')
+        )
+
+    return [subparser_init] + argument_parsers
+
+
 def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
-    pass
+    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
+
+    function_abis = [item for item in abi if item["type"] == "function"]
+    subparsers = []
+    for function_abi in function_abis:
+        subparsers.extend(generate_function_subparser(function_abi, "description"))
+    cli_body = cst.Module(body=subparsers).code
+
+    content = CLI_FILE_TEMPLATE.format(
+        abi_json=JSON_FILE_PATH,
+        cli_content=cli_body,
+        centipede_version=CENTIPEDE_VERSION,
+    )
+
+    cli_file_path = os.path.join(output_path, "cli.py")
+    with open(cli_file_path, "w") as ofp:
+        ofp.write(content)
+
+    with open(JSON_FILE_PATH, "w") as ofp:
+        ofp.write(json.dumps(abi))
