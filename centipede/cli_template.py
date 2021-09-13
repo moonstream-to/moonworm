@@ -32,6 +32,24 @@ def make_function_call(contract: Contract, function_name: str, *args):
     return contract.functions[function_name](*args).call()
 
 
+def populate_subparser_with_common_args(
+    leaf_parser: argparse.ArgumentParser,
+) -> None:
+    leaf_parser.add_argument(
+        "-web3",
+        "--web3",
+        required=True,
+        help=f"Web3 IPC connection",
+    )
+
+    leaf_parser.add_argument(
+        "-ca",
+        "--contract_address",
+        required=True,
+        help=f"contract_address",
+    )
+
+
 def generate_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Your smart contract cli")
 
@@ -43,8 +61,7 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     call_subcommands = call.add_subparsers(dest="function_name", required=True)
     my_fn = call_subcommands.add_parser("ownerOf", description="My fn call")
     my_fn.add_argument("tokenId")
-    my_fn.add_argument("--web3")
-    my_fn.add_argument("--contract_address")
+    populate_subparser_with_common_args(my_fn)
 
     my_fn2 = call_subcommands.add_parser("name", description="My fn2 call")
     my_fn2.add_argument("--web3")
@@ -89,12 +106,6 @@ def handle_args(args: argparse.Namespace):
     contract = web3.eth.contract(address=contract_address, abi=abi)
     kwargs = vars(args)
 
-    for key in common_keys:
-        try:
-            del kwargs[key]
-        except KeyError:
-            continue
-
     if args.subcommand == "call":
         function_name = kwargs["function_name"]
         del kwargs["function_name"]
@@ -102,7 +113,6 @@ def handle_args(args: argparse.Namespace):
             python_type(f_arg["type"])(kwargs[f_arg["name"]])
             for f_arg in CONTRACT_FUNCTIONS[function_name]["inputs"]
         ]
-        print(call_args)
         print(make_function_call(contract, function_name, *call_args))
 
 

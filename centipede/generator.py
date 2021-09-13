@@ -2,8 +2,11 @@ import json
 import logging
 import os
 from typing import Any, Dict, List, Union
+from typing_extensions import Annotated
 
 import libcst as cst
+from libcst._nodes.expression import Annotation, DictElement, SimpleString
+from libcst._parser.entrypoints import parse_statement
 from web3.types import ABIFunction
 
 from .version import CENTIPEDE_VERSION
@@ -151,35 +154,137 @@ def generate_contract_file(abi: Dict[str, Any], output_path: str):
         ofp.write(json.dumps(abi))
 
 
-def generate_function_subparser(
-    function_abi: ABIFunction,
-    description: str,
-) -> List[cst.SimpleStatementLine]:
-    function_name = function_abi["name"]
-    subparser_init = cst.parse_statement(
-        f'{function_name} = call_subcommands.add_parser("{function_name}", description="{description}")'
-    )
-    argument_parsers = []
-    # TODO(yhtiyar): Functions can have the same name, we will need to ressolve it
-    for arg in function_abi["inputs"]:
-        argument_parsers.append(
-            cst.parse_statement(f'{function_name}.add_argument("{arg["name"]}")')
+def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
+    def generate_function_subparser(
+        function_abi: ABIFunction,
+        description: str,
+    ) -> List[cst.SimpleStatementLine]:
+        function_name = function_abi["name"]
+        subparser_init = cst.parse_statement(
+            f'{function_name} = call_subcommands.add_parser("{function_name}", description="{description}")'
+        )
+        argument_parsers = []
+        # TODO(yhtiyar): Functions can have the same name, we will need to ressolve it
+        default_arg_counter = 1
+        for arg in function_abi["inputs"]:
+            arg_name = arg["name"]
+            if arg_name == "":
+                arg_name = f"arg{default_arg_counter}"
+                default_arg_counter += 1
+            argument_parsers.append(
+                cst.parse_statement(
+                    f'{function_name}.add_argument("{arg_name}", help="Type:{arg["type"]}")'
+                )
+            )
+
+        return (
+            [subparser_init]
+            + argument_parsers
+            + [
+                cst.parse_statement(
+                    f"populate_subparser_with_common_args({function_name})"
+                ),
+                cst.EmptyLine(),
+            ]
         )
 
-    return [subparser_init] + argument_parsers
-
-
-def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
-    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
+    parser_init = [
+        cst.parse_statement(
+            f'parser = argparse.ArgumentParser(description="Your smart contract cli")'
+        ),
+        cst.parse_statement(
+            f'subcommands = parser.add_subparsers(dest="subcommand", required=True)'
+        ),
+        cst.parse_statement(
+            f'call = subcommands.add_parser("call",description="Call smart contract function")'
+        ),
+        cst.parse_statement(
+            f'call_subcommands = call.add_subparsers(dest="function_name", required=True)'
+        ),
+    ]
 
     function_abis = [item for item in abi if item["type"] == "function"]
     subparsers = []
     for function_abi in function_abis:
         subparsers.extend(generate_function_subparser(function_abi, "description"))
-    cli_body = cst.Module(body=subparsers).code
 
+    return cst.FunctionDef(
+        name=cst.Name("generate_argument_parser"),
+        params=cst.Parameters(),
+        body=cst.IndentedBlock(
+            body=parser_init + subparsers + [cst.parse_statement("return parser")]
+        ),
+        returns=cst.Annotation(
+            annotation=cst.Attribute(
+                value=cst.Name("argparse"), attr=cst.Name("ArgumentParser")
+            )
+        ),
+    )
+
+
+def generate_contract_functions_dictionary(
+    abi: Dict[str, Any]
+) -> cst.SimpleStatementLine:
+    def generate_function_input_elemensts(function_abi: ABIFunction) -> cst.DictElement:
+        input_elements = []
+        for arg in function_abi["inputs"]:
+            default_arg_counter = 1
+            arg_name = arg["name"]
+            if arg_name == "":
+                arg_name = f"arg{default_arg_counter}"
+                default_arg_counter += 1
+            input_elements.append(
+                cst.Element(
+                    value=cst.Dict(
+                        elements=[
+                            cst.DictElement(
+                                key=cst.SimpleString('"name"'),
+                                value=cst.SimpleString(f'"{arg_name}"'),
+                            ),
+                            cst.DictElement(
+                                key=cst.SimpleString('"type"'),
+                                value=cst.SimpleString(f'"{arg["type"]}"'),
+                            ),
+                        ]
+                    )
+                )
+            )
+        return cst.DictElement(
+            key=cst.SimpleString(f'"{function_abi["name"]}"'),
+            value=cst.Dict(
+                elements=[
+                    cst.DictElement(
+                        key=cst.SimpleString('"inputs"'), value=cst.List(input_elements)
+                    )
+                ]
+            ),
+        )
+
+    function_elements = []
+    for item in abi:
+        if item["type"] == "function":
+            function_elements.append(generate_function_input_elemensts(item))
+    return cst.SimpleStatementLine(
+        body=[
+            cst.Assign(
+                targets=[cst.AssignTarget(target=cst.Name("CONTRACT_FUNCTIONS"))],
+                value=cst.Dict(elements=function_elements),
+            )
+        ]
+    )
+
+
+def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
+
+    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
+
+    cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
+    contract_functions_body = cst.Module(
+        body=[generate_contract_functions_dictionary(abi)]
+    ).code
     content = CLI_FILE_TEMPLATE.format(
-        abi_json=JSON_FILE_PATH,
+        abi_json="abi.json",
+        contract_functions=contract_functions_body,
         cli_content=cli_body,
         centipede_version=CENTIPEDE_VERSION,
     )

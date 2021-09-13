@@ -10,6 +10,7 @@ import web3
 from web3 import Web3
 from web3.contract import Contract
 
+{contract_functions}
 
 def init_web3(ipc_path: str) -> Web3:
     return Web3(web3.HTTPProvider(ipc_path))
@@ -47,6 +48,41 @@ def python_type(evm_type: str) -> Callable:
 
 
 {cli_content}
+
+def populate_subparser_with_common_args(
+    leaf_parser: argparse.ArgumentParser,
+) -> None:
+    leaf_parser.add_argument(
+        "-web3",
+        "--web3",
+        required=True,
+        help=f"Web3 IPC connection",
+    )
+
+    leaf_parser.add_argument(
+        "-ca",
+        "--contract_address",
+        required=True,
+        help=f"contract_address",
+    )
+
+def handle_args(args: argparse.Namespace):
+    # Initializng contract
+    web3 = init_web3(args.web3)
+    contract_address = web3.toChecksumAddress(args.contract_address)
+    abi = load_abi()
+    contract = web3.eth.contract(address=contract_address, abi=abi)
+   
+    kwargs = vars(args)
+
+    if args.subcommand == "call":
+        function_name = kwargs["function_name"]
+        del kwargs["function_name"]
+        call_args = [
+            python_type(f_arg["type"])(kwargs[f_arg["name"]])
+            for f_arg in CONTRACT_FUNCTIONS[function_name]["inputs"]
+        ]
+        print(make_function_call(contract, function_name, *call_args))
 
 
 def main() -> None:

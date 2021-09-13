@@ -14,6 +14,7 @@ class Contract:
     # GET CONTRACT ADDRESS IN INIT
     def __init__(self, web3: Web3):
         self.web3 = web3
+
         self.contract = web3.eth.contract(
             address=web3.toChecksumAddress(CONTRACT_ADDRESS), abi=CONTRACT_ABI
         )
@@ -226,3 +227,4 @@ cryptoKitties = Contract(w3)
 
 print(cryptoKitties.ownerOf(1))
 print(cryptoKitties.getKitty(1))
+print(cryptoKitties.kittyIndexToApproved(1))
