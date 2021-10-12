@@ -2,11 +2,8 @@ import json
 import logging
 import os
 from typing import Any, Dict, List, Union
-from typing_extensions import Annotated
 
 import libcst as cst
-from libcst._nodes.expression import Annotation, DictElement, SimpleString
-from libcst._parser.entrypoints import parse_statement
 from web3.types import ABIFunction
 
 from .version import CENTIPEDE_VERSION
@@ -26,9 +23,7 @@ try:
     with open(CLI_TEMPLATE_PATH, "r") as ifp:
         CLI_FILE_TEMPLATE = ifp.read()
 except Exception as e:
-    logging.warn(
-        f"WARNING: Could not load reporter template from {CONTRACT_TEMPLATE_PATH}:"
-    )
+    logging.warn(f"WARNING: Could not load reporter template from {CLI_TEMPLATE_PATH}:")
     logging.warn(e)
 
 
@@ -222,69 +217,14 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
     )
 
 
-def generate_contract_functions_dictionary(
-    abi: Dict[str, Any]
-) -> cst.SimpleStatementLine:
-    def generate_function_input_elemensts(function_abi: ABIFunction) -> cst.DictElement:
-        input_elements = []
-        for arg in function_abi["inputs"]:
-            default_arg_counter = 1
-            arg_name = arg["name"]
-            if arg_name == "":
-                arg_name = f"arg{default_arg_counter}"
-                default_arg_counter += 1
-            input_elements.append(
-                cst.Element(
-                    value=cst.Dict(
-                        elements=[
-                            cst.DictElement(
-                                key=cst.SimpleString('"name"'),
-                                value=cst.SimpleString(f'"{arg_name}"'),
-                            ),
-                            cst.DictElement(
-                                key=cst.SimpleString('"type"'),
-                                value=cst.SimpleString(f'"{arg["type"]}"'),
-                            ),
-                        ]
-                    )
-                )
-            )
-        return cst.DictElement(
-            key=cst.SimpleString(f'"{function_abi["name"]}"'),
-            value=cst.Dict(
-                elements=[
-                    cst.DictElement(
-                        key=cst.SimpleString('"inputs"'), value=cst.List(input_elements)
-                    )
-                ]
-            ),
-        )
-
-    function_elements = []
-    for item in abi:
-        if item["type"] == "function":
-            function_elements.append(generate_function_input_elemensts(item))
-    return cst.SimpleStatementLine(
-        body=[
-            cst.Assign(
-                targets=[cst.AssignTarget(target=cst.Name("CONTRACT_FUNCTIONS"))],
-                value=cst.Dict(elements=function_elements),
-            )
-        ]
-    )
-
-
 def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
 
     JSON_FILE_PATH = os.path.join(output_path, "abi.json")
 
     cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
-    contract_functions_body = cst.Module(
-        body=[generate_contract_functions_dictionary(abi)]
-    ).code
+
     content = CLI_FILE_TEMPLATE.format(
         abi_json="abi.json",
-        contract_functions=contract_functions_body,
         cli_content=cli_body,
         centipede_version=CENTIPEDE_VERSION,
     )

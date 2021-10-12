@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from eth_typing.evm import ChecksumAddress
 import web3
@@ -8,10 +8,12 @@ from web3.types import ABIEvent, ABIFunction
 
 
 def init_web3(ipc_path: str) -> Web3:
-    return web3.HTTPProvider(ipc_path)
+    return Web3(web3.HTTPProvider(ipc_path))
 
 
-def init_contract(web3: Web3, abi: Dict[str, Any], address: Optional[str]) -> Contract:
+def init_contract(
+    web3: Web3, abi: Dict[str, Any], address: Optional[str]
+) -> Union[Contract, Type[Contract]]:
     checksum_address: Optional[ChecksumAddress] = None
     if address is not None:
         checksum_address = web3.toChecksumAddress(address)

@@ -10,7 +10,13 @@ import web3
 from web3 import Web3
 from web3.contract import Contract
 
-{contract_functions}
+with open("{abi_json}", "r") as ifp:
+    CONTRACT_ABI = json.load(ifp)
+
+CONTRACT_FUNCTIONS = {{}}
+for abi_item in CONTRACT_ABI:
+    if abi_item["type"] == "function":
+        CONTRACT_FUNCTIONS[abi_item["name"]] = abi_item
 
 def init_web3(ipc_path: str) -> Web3:
     return Web3(web3.HTTPProvider(ipc_path))
@@ -21,12 +27,6 @@ def init_contract(web3: Web3, abi: Dict[str, Any], address: Optional[str]) -> Co
     if address is not None:
         checksum_address = web3.toChecksumAddress(address)
     return web3.eth.contract(address=checksum_address, abi=abi)
-
-
-def load_abi():
-    with open("{abi_json}", "r") as ifp:
-        abi = json.load(ifp)
-    return abi
 
 def make_function_call(contract: Contract, function_name: str, *args):
     return contract.functions[function_name](*args).call()
@@ -53,7 +53,7 @@ def populate_subparser_with_common_args(
     leaf_parser: argparse.ArgumentParser,
 ) -> None:
     leaf_parser.add_argument(
-        "-web3",
+        "-w3",
         "--web3",
         required=True,
         help=f"Web3 IPC connection",
@@ -70,8 +70,7 @@ def handle_args(args: argparse.Namespace):
     # Initializng contract
     web3 = init_web3(args.web3)
     contract_address = web3.toChecksumAddress(args.contract_address)
-    abi = load_abi()
-    contract = web3.eth.contract(address=contract_address, abi=abi)
+    contract = web3.eth.contract(address=contract_address, abi=CONTRACT_ABI)
    
     kwargs = vars(args)
 

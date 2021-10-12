@@ -3,6 +3,8 @@ from typing import Any, Dict, Union
 
 from eth_typing.evm import Address, ChecksumAddress
 from web3 import Web3
+import web3
+from web3.types import FilterParams
 
 CONTRACT_ADDRESS = "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
@@ -222,9 +224,15 @@ IPC_PATH = "http://127.0.0.1:18375"
 
 
 w3 = Web3(Web3.HTTPProvider(IPC_PATH))
-cryptoKitties = Contract(w3)
 
+transfer_event_signature = w3.sha3(text="Transfer(address,address,uint256)").hex()
+from_block = w3.eth.block_number - 2
+filter_params = FilterParams(fromBlock=from_block, topics=[transfer_event_signature])
+logs = w3.eth.get_logs(filter_params)
+print(logs)
 
-print(cryptoKitties.ownerOf(1))
-print(cryptoKitties.getKitty(1))
-print(cryptoKitties.kittyIndexToApproved(1))
+# cryptoKitties = Contract(w3)
+
+# print(cryptoKitties.ownerOf(1))
+# print(cryptoKitties.getKitty(1))
+# print(cryptoKitties.kittyIndexToApproved(1))
