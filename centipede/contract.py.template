@@ -5,7 +5,7 @@ from typing import Any, Dict, Union
 
 from eth_typing.evm import Address, ChecksumAddress
 from web3 import Web3
-
+from web3.contract import ContractFunction
 
 with open("{abi_json}", "r") as abi_file:
     CONTRACT_ABI = json.load(abi_file)
