@@ -26,9 +26,10 @@ if __name__ == "__main__":
 
     # RCC has around 11k Transfer events
     # https://etherscan.io/token/0x9b6443b0fb9c241a7fdac375595cea13e6b7807a
-    RCC_ADDRESS = "0x9b6443b0fB9C241A7fdAC375595cEa13e6B7807A"
+    RCC_ADDRESS = "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
 
     # Reduced ERC-20 ABI, only Transfer event
+
     ABI = [
         {
             "anonymous": False,
@@ -62,7 +63,7 @@ if __name__ == "__main__":
         provider.middlewares.clear()
 
         web3 = Web3(provider)
-
+        print(web3.eth.block_number)
         # Restore/create our persistent state
         state = JSONifiedState()
         state.restore()
@@ -93,7 +94,7 @@ if __name__ == "__main__":
         # Note that our chain reorg safety blocks cannot go negative
         # start_block = max(state.get_last_scanned_block() - chain_reorg_safety_blocks, 0)
         end_block = scanner.get_suggested_scan_end_block()
-        start_block = 0
+        start_block = end_block - 1000
         blocks_to_scan = end_block - start_block
 
         print(f"Scanning events from blocks {start_block} - {end_block}")
