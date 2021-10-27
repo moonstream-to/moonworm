@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import os
 
 
@@ -122,3 +122,18 @@ def read_keys_from_env() -> Tuple[ChecksumAddress, str]:
     if raw_address is None:
         raise ValueError("CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY is not set")
     return (Web3.toChecksumAddress(raw_address), private_key)
+
+
+def cast_to_python_type(evm_type: str) -> Callable:
+    if evm_type.startswith(("uint", "int")):
+        return int
+    elif evm_type.startswith("bytes"):
+        return bytes
+    elif evm_type == "string":
+        return str
+    elif evm_type == "address":
+        return Web3.toChecksumAddress
+    elif evm_type == "bool":
+        return bool
+    else:
+        raise ValueError(f"Cannot convert to python type {evm_type}")

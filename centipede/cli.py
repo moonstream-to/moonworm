@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 
-from . import manage
 from .generator import generate_contract_cli_file, generate_contract_file
 
 
@@ -18,34 +17,6 @@ def handle_genereate_cli(args: argparse.Namespace) -> None:
     generate_contract_cli_file(contract_abi, args.output_path)
 
 
-def handle_contract_show(args: argparse.Namespace) -> None:
-    with open(args.abi, "r") as ifp:
-        contract_abi = json.load(ifp)
-    show_all = not args.functions and not args.events
-    functions, events = manage.abi_show(contract_abi)
-    if show_all or args.functions:
-        print("Functions:")
-        for function in functions:
-            print(f"function {function['name']}:")
-            print("\tArgs:")
-            for arg in function["inputs"]:
-                print(f"\t\t{arg['name']} -> {arg['type']}")
-            print("")
-            print("\tReturns:")
-            for out in function["outputs"]:
-                print(f"\t\t{out['name']} -> {out['type']}")
-            print("\n")
-
-    if show_all or args.events:
-        print("Events:")
-        for event in events:
-            print(f"event {event['name']}:")
-            print("\tArgs:")
-            for arg in event["inputs"]:
-                print(f"\t\t{arg['name']} -> {arg['type']}")
-            print("")
-
-
 def generate_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Centipede: Manage your smart contract"
@@ -53,28 +24,6 @@ def generate_argument_parser() -> argparse.ArgumentParser:
 
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers()
-
-    contract = subcommands.add_parser("contract", description="Contract operations")
-    contract.set_defaults(func=lambda _: contract.print_help())
-    contract_subcommands = contract.add_subparsers()
-
-    def populate_contract_leaf_parsers(
-        leaf_parser: argparse.ArgumentParser,
-    ) -> None:
-        leaf_parser.add_argument(
-            "-abi",
-            "--abi",
-            required=True,
-            help=f"Path to contract abi JSON file",
-        )
-
-    contract_show = contract_subcommands.add_parser(
-        "show", description="Show contract functions and events"
-    )
-    populate_contract_leaf_parsers(contract_show)
-    contract_show.add_argument("--functions", action="store_true")
-    contract_show.add_argument("--events", action="store_true")
-    contract_show.set_defaults(func=handle_contract_show)
 
     generate_parser = subcommands.add_parser(
         "generate", description="Centipede code generator"

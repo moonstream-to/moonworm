@@ -4,14 +4,18 @@
 import argparse
 import json
 from typing import Any, Callable, Dict, List, Optional, Tuple
+import os
 
 from eth_typing.evm import Address, ChecksumAddress
 import web3
 from web3 import Web3
 from web3.contract import Contract
 
-with open("{abi_json}", "r") as ifp:
-    CONTRACT_ABI = json.load(ifp)
+from .web3_util import *
+
+abi_path = os.path.join(os.path.dirname(__file__), "abi.json")
+with open(abi_path, "r") as abi_file:
+    CONTRACT_ABI = json.load(abi_file)
 
 CONTRACT_FUNCTIONS = {{}}
 for abi_item in CONTRACT_ABI:

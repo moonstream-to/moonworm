@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from typing import Any, Dict, List, Union
+from shutil import copyfile
 
 import libcst as cst
 from web3.types import ABIFunction
@@ -44,14 +45,19 @@ def make_annotation(types: list):
     )
 
 
-EVM_PYTHON_TYPE_MAPPINGS = {
-    "uint256": make_annotation(["int"]),
-    "uint8": make_annotation(["int"]),
-    "uint": make_annotation(["int"]),
-    "bytes4": make_annotation(["bytes"]),
-    "string": make_annotation(["str"]),
-    "address": make_annotation(["Address", "ChecksumAddress"]),
-}
+def python_type(evm_type: str) -> List[str]:
+    if evm_type.startswith(("uint", "int")):
+        return ["int"]
+    elif evm_type.startswith("bytes"):
+        return ["bytes"]
+    elif evm_type == "string":
+        return ["str"]
+    elif evm_type == "address":
+        return ["ChecksumAddress", "Address"]
+    elif evm_type == "bool":
+        return ["bool"]
+    else:
+        raise ValueError(f"Cannot convert to python type {evm_type}")
 
 
 def generate_contract_class(
@@ -108,7 +114,7 @@ def generate_contract_function(
         if param_name == "":
             param_name = f"{default_param_name}{default_counter}"
             default_counter += 1
-        param_type = EVM_PYTHON_TYPE_MAPPINGS[param["type"]]
+        param_type = make_annotation(python_type(param["type"]))
         param_names.append(param_name)
         func_params.append(
             cst.Param(
@@ -119,9 +125,11 @@ def generate_contract_function(
 
     func_name = cst.Name(func_object["name"])
 
-    proxy_call_code = f"return self.contract.functions.{func_object['name']}({','.join(param_names)}).call()"
+    proxy_call_code = (
+        f"return self.contract.functions.{func_object['name']}({','.join(param_names)})"
+    )
     func_body = cst.IndentedBlock(body=[cst.parse_statement(proxy_call_code)])
-    func_returns = cst.Annotation(annotation=cst.Name(value="Any"))
+    func_returns = cst.Annotation(annotation=cst.Name(value="ContractFunction"))
 
     return cst.FunctionDef(
         name=func_name,
@@ -131,22 +139,38 @@ def generate_contract_function(
     )
 
 
+def copy_web3_util(dest_dir: str) -> None:
+    dest_filepath = os.path.join(dest_dir, "web3_util.py")
+    if os.path.isfile(dest_filepath):
+        print(f"{dest_filepath} file already exists")
+    web3_util_path = os.path.join(os.path.dirname(__file__), "web3_util.py")
+    copyfile(web3_util_path, dest_filepath)
+
+
+def create_init_py(dest_dir: str) -> None:
+    dest_filepath = os.path.join(dest_dir, "__init__.py")
+    if os.path.isfile(dest_filepath):
+        print(f"{dest_filepath} file already exists")
+    with open(dest_filepath, "w") as ofp:
+        ofp.write()
+
+
 def generate_contract_file(abi: Dict[str, Any], output_path: str):
     contract_body = cst.Module(body=[generate_contract_class(abi)]).code
 
-    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
-
     content = REPORTER_FILE_TEMPLATE.format(
-        abi_json=JSON_FILE_PATH,
         contract_body=contract_body,
         centipede_version=CENTIPEDE_VERSION,
     )
-    contract_file_path = os.path.join(output_path, "lol.py")
+    contract_file_path = os.path.join(output_path, "interface.py")
     with open(contract_file_path, "w") as ofp:
         ofp.write(content)
 
+    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
     with open(JSON_FILE_PATH, "w") as ofp:
         ofp.write(json.dumps(abi))
+    copy_web3_util(output_path)
+    create_init_py(output_path)
 
 
 def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
@@ -219,12 +243,9 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
 
 def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
 
-    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
-
     cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
 
     content = CLI_FILE_TEMPLATE.format(
-        abi_json="abi.json",
         cli_content=cli_body,
         centipede_version=CENTIPEDE_VERSION,
     )
@@ -233,5 +254,9 @@ def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
     with open(cli_file_path, "w") as ofp:
         ofp.write(content)
 
+    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
     with open(JSON_FILE_PATH, "w") as ofp:
         ofp.write(json.dumps(abi))
+
+    copy_web3_util(output_path)
+    create_init_py(output_path)
