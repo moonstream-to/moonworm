@@ -23,16 +23,6 @@ def init_contract(
     return web3.eth.contract(address=checksum_address, abi=abi)
 
 
-def abi_show(abi: Dict[str, Any]) -> Tuple[List[ABIFunction], List[ABIEvent]]:
-    abi_functions = [item for item in abi if item["type"] == "function"]
-    abi_events = [item for item in abi if item["type"] == "event"]
-    return (abi_functions, abi_events)
-
-
-def call_function(contract: Contract, function_name, *args) -> Any:
-    contract.functions[function_name]().call(*args)
-
-
 def deploy_ERC1155(
     web3: Web3,
     token_name: str,
