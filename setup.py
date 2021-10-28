@@ -9,7 +9,7 @@ setup(
     version="0.0.1",
     packages=find_packages(),
     package_data={"centipede": ["py.typed"]},
-    install_requires=["web3[tester]", "libcst"],
+    install_requires=["web3[tester]", "libcst", "pysha3<2.0.0,>=1.0.0"],
     extras_require={
         "dev": [
             "black",
