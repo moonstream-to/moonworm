@@ -9,7 +9,7 @@ setup(
     version="0.0.1",
     packages=find_packages(),
     package_data={"centipede": ["py.typed"]},
-    install_requires=["web3", "eth-tester"],
+    install_requires=["web3", "eth-tester", "libcst"],
     extras_require={
         "dev": [
             "black",
