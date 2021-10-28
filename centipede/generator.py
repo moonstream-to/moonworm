@@ -152,7 +152,7 @@ def create_init_py(dest_dir: str) -> None:
     if os.path.isfile(dest_filepath):
         print(f"{dest_filepath} file already exists")
     with open(dest_filepath, "w") as ofp:
-        ofp.write()
+        ofp.write("")
 
 
 def generate_contract_file(abi: Dict[str, Any], output_path: str):
