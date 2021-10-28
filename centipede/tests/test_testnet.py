@@ -65,21 +65,6 @@ class CentipedeTestnetTestCase(TestCase):
 
     def test_deployment(self) -> None:
         contract_address = self._deploy_contract()
-        base_dir = self.basedir
-        contract_abi_path = os.path.join(base_dir, "fixture/abis/ERC1155.json")
-        with open(contract_abi_path, "r") as ifp:
-            contract_abi = ifp.read()
-
-        contract = self.web3.eth.contract(contract_address, abi=contract_abi)
-        transaction = build_transaction(
-            self.web3,
-            contract.functions["create"]("2", b""),
-            self.test_address,
-            None,
-            100,
-        )
-        tx_hash = submit_transaction(self.web3, transaction, self.test_address_pk)
-        wait_for_transaction_receipt(self.web3, tx_hash)
 
 
 if __name__ == "__main__":
