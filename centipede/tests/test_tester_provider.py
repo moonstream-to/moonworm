@@ -147,7 +147,7 @@ class CentipedeEthTesterTestCase(unittest.TestCase):
         )
 
         base_dir = self.basedir
-        contract_abi_path = os.path.join(base_dir, "fixture/abis/ERC1155.json")
+        contract_abi_path = os.path.join(base_dir, "fixture/abis/CentipedeERC1155.json")
         with open(contract_abi_path, "r") as ifp:
             contract_abi = ifp.read()
 
@@ -173,7 +173,7 @@ class CentipedeEthTesterTestCase(unittest.TestCase):
 
     def test_decode_tx_input(self):
         base_dir = self.basedir
-        contract_abi_path = os.path.join(base_dir, "fixture/abis/ERC1155.json")
+        contract_abi_path = os.path.join(base_dir, "fixture/abis/CentipedeERC1155.json")
         with open(contract_abi_path, "r") as ifp:
             contract_abi = ifp.read()
         tx_input = "0xf242432a0000000000000000000000004f9a8e7dddee5f9737bafad382fa3bb119fc80c4000000000000000000000000c2485a4a8fbabbb7c39fe7b459816f2f16c238840000000000000000000000000000000000000000000000000000000000000378000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000"

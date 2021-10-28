@@ -7,15 +7,6 @@ from web3 import Web3
 from eth_typing.evm import ChecksumAddress
 from ..manage import deploy_ERC1155
 
-from ..web3_util import (
-    build_transaction,
-    decode_transaction_input,
-    get_nonce,
-    submit_signed_raw_transaction,
-    submit_transaction,
-    wait_for_transaction_receipt,
-)
-
 
 def read_testnet_env_variables() -> Tuple[Web3, ChecksumAddress, str]:
     provider_path = os.environ.get("CENTIPEDE_TESTNET_PATH")

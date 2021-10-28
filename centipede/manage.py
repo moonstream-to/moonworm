@@ -43,11 +43,13 @@ def deploy_ERC1155(
     deployer_private_key: str,
 ) -> str:
     base_dir = os.path.dirname(__file__)
-    contract_bytecode_path = os.path.join(base_dir, "fixture/bytecodes/ERC1155.bin")
+    contract_bytecode_path = os.path.join(
+        base_dir, "fixture/bytecodes/CentipedeERC1155.bin"
+    )
     with open(contract_bytecode_path, "r") as ifp:
         contract_bytecode = ifp.read()
 
-    contract_abi_path = os.path.join(base_dir, "fixture/abis/ERC1155.json")
+    contract_abi_path = os.path.join(base_dir, "fixture/abis/CentipedeERC1155.json")
     with open(contract_abi_path, "r") as ifp:
         contract_abi = ifp.read()
 
