@@ -18,7 +18,7 @@ setup(
         ],
         "distribute": ["setuptools", "twine", "wheel"],
     },
-    description="testnet: Write Python tests for your Ethereum code using testnet.bash.",
+    description="centipede: Generate a command line interface to any Ethereum smart contract",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Moonstream",
