@@ -8,14 +8,11 @@ from web3 import Web3, eth
 from web3.contract import Contract, ContractFunction
 from web3.types import Nonce, TxParams, TxReceipt, Wei
 
-# TODO: need to test in ropsten with maxFeePerFas and maxPriorityFeePerGas
-# eth-tester doesnot support this values
+
 def build_transaction(
     web3: Web3,
     builder: ContractFunction,
     sender: ChecksumAddress,
-    maxFeePerGas: Optional[Wei] = None,
-    maxPriorityFeePerGas: Optional[Wei] = None,
 ) -> Dict[str, Any]:
     """
     Builds transaction json with the given arguments. It is not submitting transaction
@@ -32,11 +29,6 @@ def build_transaction(
             "nonce": get_nonce(web3, sender),
         }
     )
-    if maxFeePerGas:
-        transaction["maxFeePerGas"] = maxFeePerGas
-    if maxPriorityFeePerGas:
-        transaction["maxPriorityFeePerGas"] = maxPriorityFeePerGas
-
     return transaction
 
 
@@ -81,7 +73,7 @@ def deploy_contract(
     deployer: ChecksumAddress,
     deployer_private_key: str,
     constructor_arguments: Optional[List[Any]] = None,
-) -> str:
+) -> ChecksumAddress:
     """
     Deploys smart contract to blockchain
     Arguments:
@@ -100,7 +92,7 @@ def deploy_contract(
     transaction_hash = submit_transaction(web3, transaction, deployer_private_key)
     transaction_receipt = wait_for_transaction_receipt(web3, transaction_hash)
     contract_address = transaction_receipt.contractAddress
-    return contract_address
+    return web3.toChecksumAddress(contract_address)
 
 
 def decode_transaction_input(web3: Web3, transaction_input: str, abi: Dict[str, Any]):

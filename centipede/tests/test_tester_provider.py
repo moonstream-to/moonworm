@@ -7,7 +7,7 @@ from web3 import Web3, EthereumTesterProvider
 from ens import ENS
 
 from centipede.manage import deploy_ERC1155
-from .web3_util import (
+from ..web3_util import (
     build_transaction,
     decode_transaction_input,
     get_nonce,
@@ -18,16 +18,6 @@ from .web3_util import (
 
 PK = "0x58d23b55bc9cdce1f18c2500f40ff4ab7245df9a89505e9b1fa4851f623d241d"
 PK_ADDRESS = "0xdc544d1aa88ff8bbd2f2aec754b1f1e99e1812fd"
-
-
-def read_testnet_env_variables() -> Tuple[ChecksumAddress, str]:
-    raw_address = os.environ.get("CENTIPEDE_ETHEREUM_ADDRESS")
-    if raw_address is None:
-        raise ValueError("CENTIPEDE_ETHEREUM_ADDRESS is not set")
-    private_key = os.environ.get("CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY")
-    if raw_address is None:
-        raise ValueError("CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY is not set")
-    return (Web3.toChecksumAddress(raw_address), private_key)
 
 
 def get_web3_test_provider() -> Web3:
@@ -47,6 +37,7 @@ def airdrop_ether(web3: Web3, to_address: ChecksumAddress):
 
 class CentipedeEthTesterTestCase(unittest.TestCase):
     def setUp(self) -> None:
+        self.basedir = os.path.dirname(os.path.dirname(__file__))
         self.web3 = get_web3_test_provider()
         self.tester_address = Web3.toChecksumAddress(PK_ADDRESS)
         self.tester_address_pk = PK
@@ -155,7 +146,7 @@ class CentipedeEthTesterTestCase(unittest.TestCase):
             self.tester_address_pk,
         )
 
-        base_dir = os.path.dirname(__file__)
+        base_dir = self.basedir
         contract_abi_path = os.path.join(base_dir, "fixture/abis/ERC1155.json")
         with open(contract_abi_path, "r") as ifp:
             contract_abi = ifp.read()
@@ -181,9 +172,13 @@ class CentipedeEthTesterTestCase(unittest.TestCase):
         ), "Token with id 1 is not created or has different uri from that is expected"
 
     def test_decode_tx_input(self):
-        base_dir = os.path.dirname(__file__)
+        base_dir = self.basedir
         contract_abi_path = os.path.join(base_dir, "fixture/abis/ERC1155.json")
         with open(contract_abi_path, "r") as ifp:
             contract_abi = ifp.read()
         tx_input = "0xf242432a0000000000000000000000004f9a8e7dddee5f9737bafad382fa3bb119fc80c4000000000000000000000000c2485a4a8fbabbb7c39fe7b459816f2f16c238840000000000000000000000000000000000000000000000000000000000000378000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000"
-        print(decode_transaction_input(self.web3, tx_input, contract_abi))
+        decode_transaction_input(self.web3, tx_input, contract_abi)
+
+
+if __name__ == "__main__":
+    unittest.main()
