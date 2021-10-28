@@ -29,5 +29,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Topic :: Software Development :: Libraries",
     ],
-    url="https://github.com/bugout-dev/testnet.bash",
+    python_requires=">=3.6",
+    url="https://github.com/bugout-dev/centipede/",
+    entry_points={"console_scripts": ["centipede=centipede.cli:main"]},
 )
