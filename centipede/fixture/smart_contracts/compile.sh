@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-#shitty bash code that compiles smart contract with solc
+#shitty script that compiles smart contract with solc
 #and puts bytecode to ../bytecodes and abi to ../abis folder
 tempdir="$(mktemp -d)"
 solc --abi --bin $1 -o "$tempdir"
