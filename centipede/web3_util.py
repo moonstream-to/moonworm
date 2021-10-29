@@ -73,7 +73,7 @@ def deploy_contract(
     deployer: ChecksumAddress,
     deployer_private_key: str,
     constructor_arguments: Optional[List[Any]] = None,
-) -> ChecksumAddress:
+) -> Tuple[HexBytes, ChecksumAddress]:
     """
     Deploys smart contract to blockchain
     Arguments:
@@ -92,7 +92,7 @@ def deploy_contract(
     transaction_hash = submit_transaction(web3, transaction, deployer_private_key)
     transaction_receipt = wait_for_transaction_receipt(web3, transaction_hash)
     contract_address = transaction_receipt.contractAddress
-    return web3.toChecksumAddress(contract_address)
+    return transaction_hash, web3.toChecksumAddress(contract_address)
 
 
 def decode_transaction_input(web3: Web3, transaction_input: str, abi: Dict[str, Any]):

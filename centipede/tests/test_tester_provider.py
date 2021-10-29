@@ -136,7 +136,7 @@ class CentipedeEthTesterTestCase(unittest.TestCase):
         TOKEN_NAME = "CENTIPEDE-TEST"
         TOKEN_SYMBOL = "CNTPD"
         TOKEN_URI = "moonstream.to/centipede/"
-        contract_address = deploy_ERC1155(
+        _, contract_address = deploy_ERC1155(
             self.web3,
             TOKEN_NAME,
             TOKEN_SYMBOL,
