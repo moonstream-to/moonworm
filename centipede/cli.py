@@ -5,16 +5,13 @@ import os
 from .generator import generate_contract_cli_file, generate_contract_file
 
 
-def handle_genereate_interface(args: argparse.Namespace) -> None:
+def handle_generate(args: argparse.Namespace) -> None:
     with open(args.abi, "r") as ifp:
         contract_abi = json.load(ifp)
-    generate_contract_file(contract_abi, args.output_path)
-
-
-def handle_genereate_cli(args: argparse.Namespace) -> None:
-    with open(args.abi, "r") as ifp:
-        contract_abi = json.load(ifp)
-    generate_contract_cli_file(contract_abi, args.output_path)
+    if args.interface:
+        generate_contract_file(contract_abi, args.outdir)
+    if args.cli:
+        generate_contract_cli_file(contract_abi, args.outdir)
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
@@ -29,39 +26,31 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         "generate", description="Centipede code generator"
     )
 
-    def populate_generate_leaf_parsers(
-        leaf_parser: argparse.ArgumentParser,
-    ) -> None:
-        current_working_directory = os.getcwd()
-        leaf_parser.add_argument(
-            "-abi",
-            "--abi",
-            required=True,
-            help=f"Path to contract abi JSON file",
-        )
-        leaf_parser.add_argument(
-            "-op",
-            "--output_path",
-            default=current_working_directory,
-            help=f"Output path where files will be generated. Default={current_working_directory}",
-        )
-
-    generate_parser.set_defaults(func=lambda _: generate_parser.print_help())
-
-    genereate_subcommands = generate_parser.add_subparsers()
-    generate_interface = genereate_subcommands.add_parser(
-        "interface",
-        description="Generate python interface for smart contract",
+    generate_parser.add_argument(
+        "-i",
+        "--abi",
+        required=True,
+        help=f"Path to contract abi JSON file",
     )
-    populate_generate_leaf_parsers(generate_interface)
-    generate_interface.set_defaults(func=handle_genereate_interface)
-
-    generate_cli = genereate_subcommands.add_parser(
-        "cli",
-        description="Generate python cli for smart contract",
+    generate_parser.add_argument(
+        "-o",
+        "--outdir",
+        required=True,
+        help=f"Output directory where files will be generated.",
     )
-    populate_generate_leaf_parsers(generate_cli)
-    generate_cli.set_defaults(func=handle_genereate_cli)
+    generate_parser.add_argument(
+        "--interface",
+        action="store_true",
+        help="Generate python interface for given smart contract abi",
+    )
+
+    generate_parser.add_argument(
+        "--cli",
+        action="store_true",
+        help="Generate cli for given smart contract abi",
+    )
+
+    generate_parser.set_defaults(func=handle_generate)
     return parser
 
 
