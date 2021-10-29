@@ -3,6 +3,7 @@ import logging
 import os
 from typing import Any, Dict, List, Union
 from shutil import copyfile
+import keyword
 
 import libcst as cst
 from web3.types import ABIFunction
@@ -43,6 +44,13 @@ def make_annotation(types: list):
     return cst.Annotation(
         annotation=cst.Subscript(value=cst.Name("Union"), slice=union_slice)
     )
+
+
+def normalize_abi_name(name: str) -> str:
+    if keyword.iskeyword(name):
+        return name + "_"
+    else:
+        return name
 
 
 def python_type(evm_type: str) -> List[str]:
@@ -110,7 +118,7 @@ def generate_contract_function(
 
     param_names = []
     for param in func_object["inputs"]:
-        param_name = param["name"]
+        param_name = normalize_abi_name(param["name"])
         if param_name == "":
             param_name = f"{default_param_name}{default_counter}"
             default_counter += 1
@@ -122,11 +130,11 @@ def generate_contract_function(
                 annotation=param_type,
             )
         )
-
-    func_name = cst.Name(func_object["name"])
+    func_raw_name = normalize_abi_name(func_object["name"])
+    func_name = cst.Name(func_raw_name)
 
     proxy_call_code = (
-        f"return self.contract.functions.{func_object['name']}({','.join(param_names)})"
+        f"return self.contract.functions.{func_raw_name}({','.join(param_names)})"
     )
     func_body = cst.IndentedBlock(body=[cst.parse_statement(proxy_call_code)])
     func_returns = cst.Annotation(annotation=cst.Name(value="ContractFunction"))
@@ -178,7 +186,7 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
         function_abi: ABIFunction,
         description: str,
     ) -> List[cst.SimpleStatementLine]:
-        function_name = function_abi["name"]
+        function_name = normalize_abi_name(function_abi["name"])
         subparser_init = cst.parse_statement(
             f'{function_name} = call_subcommands.add_parser("{function_name}", description="{description}")'
         )
@@ -186,7 +194,7 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
         # TODO(yhtiyar): Functions can have the same name, we will need to ressolve it
         default_arg_counter = 1
         for arg in function_abi["inputs"]:
-            arg_name = arg["name"]
+            arg_name = normalize_abi_name(arg["name"])
             if arg_name == "":
                 arg_name = f"arg{default_arg_counter}"
                 default_arg_counter += 1
