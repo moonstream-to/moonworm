@@ -60,7 +60,6 @@ def deploy_ERC20(
     web3: Web3,
     token_name: str,
     token_symbol: str,
-    token_uri: str,
     token_owner: ChecksumAddress,
     deployer: ChecksumAddress,
     deployer_private_key: str,
