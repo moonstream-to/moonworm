@@ -1,15 +1,8 @@
-import os
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
-
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
-import web3
 from web3 import Web3
-from web3.contract import Contract
-from web3.types import ABIEvent, ABIFunction
 
-from centipede.contracts import ERC1155, ERC20, ERC721, CentipedeContract
-
+from .contracts import ERC1155, ERC20, ERC721, CentipedeContract
 from .web3_util import deploy_contract
 
 
