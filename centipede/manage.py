@@ -65,15 +65,15 @@ def deploy_ERC20(
     deployer: ChecksumAddress,
     deployer_private_key: str,
 ) -> Tuple[HexBytes, ChecksumAddress]:
-    return _deploy_centipede_token_contract(
+    contract_abi = ERC20.abi()
+    contract_bytecode = ERC20.bytecode()
+    return deploy_contract(
         web3,
-        ERC20,
-        token_name,
-        token_symbol,
-        token_uri,
-        token_owner,
+        contract_bytecode,
+        contract_abi,
         deployer,
         deployer_private_key,
+        [token_name, token_symbol, token_owner],
     )
 
 
