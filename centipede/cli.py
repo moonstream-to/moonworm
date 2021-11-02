@@ -3,6 +3,7 @@ import json
 import os
 from shutil import copyfile
 
+from .contracts import ERC20, ERC721
 from .generator import (
     generate_contract_cli_content,
     generate_contract_interface_content,
@@ -31,13 +32,21 @@ def create_init_py(dest_dir: str, force: bool = False) -> None:
 
 
 def handle_generate(args: argparse.Namespace) -> None:
-    with open(args.abi, "r") as ifp:
-        contract_abi = json.load(ifp)
+    args.name = args.name + "_"
 
-    if args.name is None:
-        args.name = ""
+    if args.abi == "erc20":
+        contract_abi = ERC20.abi()
+        write_file(
+            ERC20.bytecode(), os.path.join(args.outdir, args.name + "bytecode.bin")
+        )
+    elif args.abi == "erc721":
+        contract_abi = ERC721.abi()
+        write_file(
+            ERC721.bytecode(), os.path.join(args.outdir, args.name + "bytecode.bin")
+        )
     else:
-        args.name = args.name + "_"
+        with open(args.abi, "r") as ifp:
+            contract_abi = json.load(ifp)
 
     abi_file_name = args.name + "abi.json"
     write_file(json.dumps(contract_abi), os.path.join(args.outdir, abi_file_name))
@@ -71,7 +80,7 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         "-i",
         "--abi",
         required=True,
-        help=f"Path to contract abi JSON file",
+        help=f"Path to contract abi JSON file or (erc20|erc721)",
     )
     generate_parser.add_argument(
         "-o",
