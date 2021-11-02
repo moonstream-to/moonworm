@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import os
+import getpass
 
 from eth_account.account import Account
 from eth_typing.evm import ChecksumAddress
@@ -136,7 +137,7 @@ def decode_transaction_input(web3: Web3, transaction_input: str, abi: Dict[str, 
 
 
 def read_keys_from_cli() -> Tuple[ChecksumAddress, str]:
-    private_key = input("Enter private key of your address:")
+    private_key = getpass.getpass(prompt="Enter private key of your address:")
     account = Account.from_key(private_key)
     return (Web3.toChecksumAddress(account.address), private_key)
 
