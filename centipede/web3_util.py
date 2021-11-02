@@ -1,12 +1,18 @@
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import os
 
-
+from eth_account.account import Account
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 from web3 import Web3, eth
 from web3.contract import Contract, ContractFunction
 from web3.types import Nonce, TxParams, TxReceipt, Wei
+
+
+class ContractConstructor:
+    def __init__(self, *args: Any):
+        self.args = args
 
 
 def build_transaction(
@@ -95,25 +101,54 @@ def deploy_contract(
     return transaction_hash, web3.toChecksumAddress(contract_address)
 
 
+def deploy_contract_from_constructor_function(
+    web3: Web3,
+    contract_bytecode: str,
+    contract_abi: Dict[str, Any],
+    deployer: ChecksumAddress,
+    deployer_private_key: str,
+    constructor: ContractConstructor,
+) -> Tuple[HexBytes, ChecksumAddress]:
+    """
+    Deploys smart contract to blockchain from constructor ContractFunction
+    Arguments:
+    - web3: web3 client
+    - contract_bytecode: Compiled smart contract bytecode
+    - contract_abi: Json abi of contract. Must include `constructor` function
+    - deployer: Address which is deploying contract. Deployer will pay transaction fee
+    - deployer_private_key: Private key of deployer. Needed for signing and submitting transaction
+    - constructor:`constructor` function  of the smart contract
+    """
+    contract = web3.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
+    transaction = build_transaction(
+        web3, contract.constructor(*constructor.args), deployer
+    )
+
+    transaction_hash = submit_transaction(web3, transaction, deployer_private_key)
+    transaction_receipt = wait_for_transaction_receipt(web3, transaction_hash)
+    contract_address = transaction_receipt.contractAddress
+    return transaction_hash, web3.toChecksumAddress(contract_address)
+
+
 def decode_transaction_input(web3: Web3, transaction_input: str, abi: Dict[str, Any]):
     contract = web3.eth.contract(abi=abi)
     return contract.decode_function_input(transaction_input)
 
 
 def read_keys_from_cli() -> Tuple[ChecksumAddress, str]:
-    raw_address = input("Enter your ethereum address:")
     private_key = input("Enter private key of your address:")
-    return (Web3.toChecksumAddress(raw_address), private_key)
+    account = Account.from_key(private_key)
+    return (Web3.toChecksumAddress(account.address), private_key)
 
 
 def read_keys_from_env() -> Tuple[ChecksumAddress, str]:
-    raw_address = os.environ.get("CENTIPEDE_ETHEREUM_ADDRESS")
-    if raw_address is None:
-        raise ValueError("CENTIPEDE_ETHEREUM_ADDRESS is not set")
     private_key = os.environ.get("CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY")
-    if raw_address is None:
-        raise ValueError("CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY is not set")
-    return (Web3.toChecksumAddress(raw_address), private_key)
+    if private_key is None:
+        raise ValueError(
+            "CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY env variable is not set"
+        )
+    account = Account.from_key(private_key)
+    return (Web3.toChecksumAddress(account), private_key)
 
 
 def cast_to_python_type(evm_type: str) -> Callable:

@@ -1,17 +1,58 @@
 import argparse
 import json
 import os
+from shutil import copyfile
 
-from .generator import generate_contract_cli_file, generate_contract_file
+from .generator import (
+    generate_contract_cli_content,
+    generate_contract_interface_content,
+)
+
+
+def write_file(content: str, path: str):
+    with open(path, "w") as ofp:
+        ofp.write(content)
+
+
+def copy_web3_util(dest_dir: str, force: bool = False) -> None:
+    dest_filepath = os.path.join(dest_dir, "web3_util.py")
+    if os.path.isfile(dest_filepath) and not force:
+        print(f"{dest_filepath} file already exists. Use -f to rewrite")
+    web3_util_path = os.path.join(os.path.dirname(__file__), "web3_util.py")
+    copyfile(web3_util_path, dest_filepath)
+
+
+def create_init_py(dest_dir: str, force: bool = False) -> None:
+    dest_filepath = os.path.join(dest_dir, "__init__.py")
+    if os.path.isfile(dest_filepath) and not force:
+        print(f"{dest_filepath} file already exists. Use -f to rewrite")
+    with open(dest_filepath, "w") as ofp:
+        ofp.write("")
 
 
 def handle_generate(args: argparse.Namespace) -> None:
     with open(args.abi, "r") as ifp:
         contract_abi = json.load(ifp)
+
+    if args.name is None:
+        args.name = ""
+    else:
+        args.name = args.name + "_"
+
+    abi_file_name = args.name + "abi.json"
+    write_file(json.dumps(contract_abi), os.path.join(args.outdir, abi_file_name))
+    copy_web3_util(args.outdir, args.force)
+    create_init_py(args.outdir, args.force)
     if args.interface:
-        generate_contract_file(contract_abi, args.outdir)
+        interface_content = generate_contract_interface_content(
+            contract_abi, abi_file_name
+        )
+        interface_name = args.name + "interface.py"
+        write_file(interface_content, os.path.join(args.outdir, interface_name))
     if args.cli:
-        generate_contract_cli_file(contract_abi, args.outdir)
+        cli_content = generate_contract_cli_content(contract_abi, abi_file_name)
+        cli_name = args.name + "cli.py"
+        write_file(cli_content, os.path.join(args.outdir, cli_name))
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
@@ -49,7 +90,18 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Generate cli for given smart contract abi",
     )
-
+    generate_parser.add_argument(
+        "--name",
+        "-n",
+        required=True,
+        help="Prefix name for generated files",
+    )
+    generate_parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Force rewrite generated files",
+    )
     generate_parser.set_defaults(func=handle_generate)
     return parser
 

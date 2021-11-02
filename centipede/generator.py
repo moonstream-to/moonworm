@@ -1,8 +1,6 @@
-import json
 import logging
 import os
 from typing import Any, Dict, List, Union
-from shutil import copyfile
 import keyword
 
 import libcst as cst
@@ -13,7 +11,7 @@ from .version import CENTIPEDE_VERSION
 CONTRACT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "contract.py.template")
 try:
     with open(CONTRACT_TEMPLATE_PATH, "r") as ifp:
-        REPORTER_FILE_TEMPLATE = ifp.read()
+        INTERFACE_FILE_TEMPLATE = ifp.read()
 except Exception as e:
     logging.warn(
         f"WARNING: Could not load reporter template from {CONTRACT_TEMPLATE_PATH}:"
@@ -61,7 +59,7 @@ def python_type(evm_type: str) -> List[str]:
     elif evm_type == "string":
         return ["str"]
     elif evm_type == "address":
-        return ["ChecksumAddress", "Address"]
+        return ["ChecksumAddress"]
     elif evm_type == "bool":
         return ["bool"]
     else:
@@ -69,7 +67,7 @@ def python_type(evm_type: str) -> List[str]:
 
 
 def generate_contract_class(
-    abi: Dict[str, Any],
+    abi: List[Dict[str, Any]],
 ) -> cst.ClassDef:
     class_name = "Contract"
     class_constructor = cst.FunctionDef(
@@ -97,13 +95,56 @@ def generate_contract_class(
             ]
         ),
     )
-    class_functions = [class_constructor] + [
-        generate_contract_function(function)
-        for function in abi
-        if function["type"] == "function"
-    ]
+    contract_constructor = [c for c in abi if c["type"] == "constructor"][0]
+    contract_constructor["name"] = "constructor"
+    class_functions = (
+        [class_constructor]
+        + [generate_contract_constructor_function(contract_constructor)]
+        + [
+            generate_contract_function(function)
+            for function in abi
+            if function["type"] == "function"
+        ]
+    )
     return cst.ClassDef(
         name=cst.Name(class_name), body=cst.IndentedBlock(body=class_functions)
+    )
+
+
+def generate_contract_constructor_function(
+    func_object: Union[Dict[str, Any], int]
+) -> cst.FunctionDef:
+    default_param_name = "arg"
+    default_counter = 1
+    func_params = []
+
+    param_names = []
+    for param in func_object["inputs"]:
+        param_name = normalize_abi_name(param["name"])
+        if param_name == "":
+            param_name = f"{default_param_name}{default_counter}"
+            default_counter += 1
+        param_type = make_annotation(python_type(param["type"]))
+        param_names.append(param_name)
+        func_params.append(
+            cst.Param(
+                name=cst.Name(value=param_name),
+                annotation=param_type,
+            )
+        )
+    func_raw_name = normalize_abi_name(func_object["name"])
+    func_name = cst.Name(func_raw_name)
+
+    proxy_call_code = f"return ContractConstructor({','.join(param_names)})"
+    func_body = cst.IndentedBlock(body=[cst.parse_statement(proxy_call_code)])
+    func_returns = cst.Annotation(annotation=cst.Name(value="ContractConstructor"))
+
+    return cst.FunctionDef(
+        name=func_name,
+        decorators=[cst.Decorator(decorator=cst.Name("staticmethod"))],
+        params=cst.Parameters(params=func_params),
+        body=func_body,
+        returns=func_returns,
     )
 
 
@@ -147,49 +188,20 @@ def generate_contract_function(
     )
 
 
-def copy_web3_util(dest_dir: str) -> None:
-    dest_filepath = os.path.join(dest_dir, "web3_util.py")
-    if os.path.isfile(dest_filepath):
-        print(f"{dest_filepath} file already exists")
-    web3_util_path = os.path.join(os.path.dirname(__file__), "web3_util.py")
-    copyfile(web3_util_path, dest_filepath)
-
-
-def create_init_py(dest_dir: str) -> None:
-    dest_filepath = os.path.join(dest_dir, "__init__.py")
-    if os.path.isfile(dest_filepath):
-        print(f"{dest_filepath} file already exists")
-    with open(dest_filepath, "w") as ofp:
-        ofp.write("")
-
-
-def generate_contract_file(abi: Dict[str, Any], output_path: str):
-    contract_body = cst.Module(body=[generate_contract_class(abi)]).code
-
-    content = REPORTER_FILE_TEMPLATE.format(
-        contract_body=contract_body,
-        centipede_version=CENTIPEDE_VERSION,
-    )
-    contract_file_path = os.path.join(output_path, "interface.py")
-    with open(contract_file_path, "w") as ofp:
-        ofp.write(content)
-
-    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
-    with open(JSON_FILE_PATH, "w") as ofp:
-        ofp.write(json.dumps(abi))
-    copy_web3_util(output_path)
-    create_init_py(output_path)
-
-
 def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
     def generate_function_subparser(
         function_abi: ABIFunction,
         description: str,
     ) -> List[cst.SimpleStatementLine]:
         function_name = normalize_abi_name(function_abi["name"])
-        subparser_init = cst.parse_statement(
-            f'{function_name} = call_subcommands.add_parser("{function_name}", description="{description}")'
-        )
+        subparser_init = [
+            cst.parse_statement(
+                f'{function_name}_call = call_subcommands.add_parser("{function_name}", description="{description}")'
+            ),
+            cst.parse_statement(
+                f'{function_name}_transact = transact_subcommands.add_parser("{function_name}", description="{description}")'
+            ),
+        ]
         argument_parsers = []
         # TODO(yhtiyar): Functions can have the same name, we will need to ressolve it
         default_arg_counter = 1
@@ -200,16 +212,24 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
                 default_arg_counter += 1
             argument_parsers.append(
                 cst.parse_statement(
-                    f'{function_name}.add_argument("{arg_name}", help="Type:{arg["type"]}")'
+                    f'{function_name}_call.add_argument("{arg_name}", help="Type:{arg["type"]}")'
+                )
+            )
+            argument_parsers.append(
+                cst.parse_statement(
+                    f'{function_name}_transact.add_argument("{arg_name}", help="Type:{arg["type"]}")'
                 )
             )
 
         return (
-            [subparser_init]
+            subparser_init
             + argument_parsers
             + [
                 cst.parse_statement(
-                    f"populate_subparser_with_common_args({function_name})"
+                    f"populate_subparser_with_common_args({function_name}_call)"
+                ),
+                cst.parse_statement(
+                    f"populate_subparser_with_common_args({function_name}_transact)"
                 ),
                 cst.EmptyLine(),
             ]
@@ -228,6 +248,12 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
         cst.parse_statement(
             f'call_subcommands = call.add_subparsers(dest="function_name", required=True)'
         ),
+        cst.parse_statement(
+            f'transact = subcommands.add_parser("transact",description="Make transaction to smart contract function")'
+        ),
+        cst.parse_statement(
+            f'transact_subcommands = transact.add_subparsers(dest="function_name", required=True)'
+        ),
     ]
 
     function_abis = [item for item in abi if item["type"] == "function"]
@@ -235,11 +261,37 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
     for function_abi in function_abis:
         subparsers.extend(generate_function_subparser(function_abi, "description"))
 
+    # Deploy argparser:
+    contract_constructor = [item for item in abi if item["type"] == "constructor"][0]
+    deploy_argument_parsers = []
+    default_arg_counter = 1
+    for arg in contract_constructor["inputs"]:
+        arg_name = normalize_abi_name(arg["name"])
+        if arg_name == "":
+            arg_name = f"arg{default_arg_counter}"
+            default_arg_counter += 1
+        deploy_argument_parsers.append(
+            cst.parse_statement(
+                f'deploy.add_argument("{arg_name}", help="Type:{arg["type"]}")'
+            )
+        )
+    deploy_parser = (
+        [
+            cst.parse_statement(
+                'deploy = subcommands.add_parser("deploy", description="Deploy contract")'
+            )
+        ]
+        + deploy_argument_parsers
+        + [cst.parse_statement("populate_deploy_subparser(deploy)")]
+    )
     return cst.FunctionDef(
         name=cst.Name("generate_argument_parser"),
         params=cst.Parameters(),
         body=cst.IndentedBlock(
-            body=parser_init + subparsers + [cst.parse_statement("return parser")]
+            body=parser_init
+            + subparsers
+            + deploy_parser
+            + [cst.parse_statement("return parser")]
         ),
         returns=cst.Annotation(
             annotation=cst.Attribute(
@@ -249,22 +301,25 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
     )
 
 
-def generate_contract_cli_file(abi: Dict[str, Any], output_path: str):
+def generate_contract_interface_content(abi: Dict[str, Any], abi_file_name: str) -> str:
+    contract_body = cst.Module(body=[generate_contract_class(abi)]).code
+
+    content = INTERFACE_FILE_TEMPLATE.format(
+        contract_body=contract_body,
+        centipede_version=CENTIPEDE_VERSION,
+        abi_file_name=abi_file_name,
+    )
+    return content
+
+
+def generate_contract_cli_content(abi: Dict[str, Any], abi_file_name: str) -> str:
 
     cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
 
     content = CLI_FILE_TEMPLATE.format(
         cli_content=cli_body,
         centipede_version=CENTIPEDE_VERSION,
+        abi_file_name=abi_file_name,
     )
 
-    cli_file_path = os.path.join(output_path, "cli.py")
-    with open(cli_file_path, "w") as ofp:
-        ofp.write(content)
-
-    JSON_FILE_PATH = os.path.join(output_path, "abi.json")
-    with open(JSON_FILE_PATH, "w") as ofp:
-        ofp.write(json.dumps(abi))
-
-    copy_web3_util(output_path)
-    create_init_py(output_path)
+    return content
