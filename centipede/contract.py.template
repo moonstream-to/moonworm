@@ -30,3 +30,4 @@ def deploy(
         deployer=deployer_address,
         deployer_private_key=deployer_private_key,
     )
+    return Contract(web3, contract_address)
