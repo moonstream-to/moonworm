@@ -1,0 +1,3 @@
+[submodule "centipede/fixture/smart_contracts/openzeppelin-contracts"]
+	path = centipede/fixture/smart_contracts/openzeppelin-contracts
+	url = git@github.com:OpenZeppelin/openzeppelin-contracts.git
