@@ -17,4 +17,8 @@ contract CentipedeERC20 is ERC20, Ownable {
     function mint(address account, uint256 amount) public onlyOwner {
         _mint(account, amount);
     }
+
+    function decimals() public view virtual override returns (uint8) {
+        return 1;
+    }
 }
