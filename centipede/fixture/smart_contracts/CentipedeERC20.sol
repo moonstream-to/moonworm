@@ -19,6 +19,6 @@ contract CentipedeERC20 is ERC20, Ownable {
     }
 
     function decimals() public view virtual override returns (uint8) {
-        return 1;
+        return 0;
     }
 }
