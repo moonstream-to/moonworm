@@ -17,7 +17,7 @@ _PATHS = {
 }
 
 
-class CentipedeContract:
+class MoonwormContract:
     def __init__(self, abi_path: str, bytecode_path: str) -> None:
         self._abi_path = abi_path
         self._bytecode_path = bytecode_path
@@ -35,6 +35,6 @@ class CentipedeContract:
         return bytecode
 
 
-ERC20 = CentipedeContract(_PATHS["abi"]["erc20"], _PATHS["bytecode"]["erc20"])
-ERC721 = CentipedeContract(_PATHS["abi"]["erc721"], _PATHS["bytecode"]["erc721"])
-ERC1155 = CentipedeContract(_PATHS["abi"]["erc1155"], _PATHS["bytecode"]["erc1155"])
+ERC20 = MoonwormContract(_PATHS["abi"]["erc20"], _PATHS["bytecode"]["erc20"])
+ERC721 = MoonwormContract(_PATHS["abi"]["erc721"], _PATHS["bytecode"]["erc721"])
+ERC1155 = MoonwormContract(_PATHS["abi"]["erc1155"], _PATHS["bytecode"]["erc1155"])

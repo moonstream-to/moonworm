@@ -9,16 +9,16 @@ from ..manage import deploy_ERC1155
 
 
 def read_testnet_env_variables() -> Tuple[Web3, ChecksumAddress, str]:
-    provider_path = os.environ.get("CENTIPEDE_TESTNET_PATH")
+    provider_path = os.environ.get("MOONWORM_TESTNET_PATH")
     if provider_path is None:
-        raise ValueError("CENTIPEDE_TESTNET_PATH env variable is not set")
-    raw_address = os.environ.get("CENTIPEDE_TEST_ETHEREUM_ADDRESS")
+        raise ValueError("MOONWORM_TESTNET_PATH env variable is not set")
+    raw_address = os.environ.get("MOONWORM_TEST_ETHEREUM_ADDRESS")
     if raw_address is None:
-        raise ValueError("CENTIPEDE_TEST_ETHEREUM_ADDRESS env variable is not set")
-    private_key = os.environ.get("CENTIPEDE_TEST_ETHEREUM_ADDRESS_PRIVATE_KEY")
+        raise ValueError("MOONWORM_TEST_ETHEREUM_ADDRESS env variable is not set")
+    private_key = os.environ.get("MOONWORM_TEST_ETHEREUM_ADDRESS_PRIVATE_KEY")
     if raw_address is None:
         raise ValueError(
-            "CENTIPEDE_TEST_ETHEREUM_ADDRESS_PRIVATE_KEY env variable is not set"
+            "MOONWORM_TEST_ETHEREUM_ADDRESS_PRIVATE_KEY env variable is not set"
         )
     return (
         Web3(Web3.HTTPProvider(provider_path)),
@@ -40,9 +40,9 @@ class CentipedeTestnetTestCase(TestCase):
             raise unittest.SkipTest(f"Skipping test because of : {str(e)}")
 
     def _deploy_contract(self) -> ChecksumAddress:
-        TOKEN_NAME = "CENTIPEDE-TEST"
+        TOKEN_NAME = "MOONWORM=TEST"
         TOKEN_SYMBOL = "CNTPD"
-        TOKEN_URI = "moonstream.to/centipede/"
+        TOKEN_URI = "moonstream.to/moonworm/"
         _, contract_address = deploy_ERC1155(
             self.web3,
             TOKEN_NAME,
