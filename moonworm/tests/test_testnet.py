@@ -27,7 +27,7 @@ def read_testnet_env_variables() -> Tuple[Web3, ChecksumAddress, str]:
     )
 
 
-class CentipedeTestnetTestCase(TestCase):
+class MoonwormTestnetTestCase(TestCase):
     def setUp(self) -> None:
         self.basedir = os.path.dirname(os.path.dirname(__file__))
         try:
