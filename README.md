@@ -1,4 +1,4 @@
-# Centipede
+# Moonworm
 Generate command line and a python interface to any Ethereum smart contract
 
 # Installation
