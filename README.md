@@ -51,7 +51,7 @@ moonworm generate --cli --interface -o generated/ --name <Give a name> --abi <Pa
     * `<Token name>` - Name of the token
     * `<Token symbol>` - Symbol of the token
     * `<Token owner>` - Owner of token, who has ability to mint new tokens. Put your address here
-    * `<Http path to node>` - Path to jrpc client. `https://ropsten.infura.io/v3/YOUR-PROJECT-ID` if you want use infura ropsten
+    * `<Http path to client provider>` - Path to jrpc client. `https://ropsten.infura.io/v3/YOUR-PROJECT-ID` if you want use infura ropsten
     
     It will ask your account `private key` in order to submit deployment transaction.
     It will deploy contract and give you your contract address if everything goes well
