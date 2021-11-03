@@ -69,7 +69,7 @@ moonworm generate --cli --interface -o generated/ --name <Give a name> --abi <Pa
     It will ask your `private key` and confirmation to send transaction.
     
 6. Lets transfer some tokens:
-    You can send me some of your deployed contract tokens:
+    You can send me some tokens:
     ``` bash
     python3 -m generated.erc20_cli transact transfer 0xa75720c500ae1551c08074E5A9849EA92528401D <Amount of token to transfer> --web3 <Http path to client provider> -c <Deployed contract address>
     ```
