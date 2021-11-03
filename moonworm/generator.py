@@ -6,7 +6,7 @@ import keyword
 import libcst as cst
 from web3.types import ABIFunction
 
-from .version import CENTIPEDE_VERSION
+from .version import MOONWORM_VERSION
 
 CONTRACT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "contract.py.template")
 try:
@@ -14,7 +14,7 @@ try:
         INTERFACE_FILE_TEMPLATE = ifp.read()
 except Exception as e:
     logging.warn(
-        f"WARNING: Could not load reporter template from {CONTRACT_TEMPLATE_PATH}:"
+        f"WARNING: Could not load contract template from {CONTRACT_TEMPLATE_PATH}:"
     )
     logging.warn(e)
 
@@ -23,7 +23,7 @@ try:
     with open(CLI_TEMPLATE_PATH, "r") as ifp:
         CLI_FILE_TEMPLATE = ifp.read()
 except Exception as e:
-    logging.warn(f"WARNING: Could not load reporter template from {CLI_TEMPLATE_PATH}:")
+    logging.warn(f"WARNING: Could not load cli template from {CLI_TEMPLATE_PATH}:")
     logging.warn(e)
 
 
@@ -90,7 +90,7 @@ def generate_contract_class(
                 ),
                 cst.Param(
                     name=cst.Name("contract_address"),
-                    annotation=make_annotation(["Address", "ChecksumAddress"]),
+                    annotation=make_annotation(["ChecksumAddress"]),
                 ),
             ]
         ),
@@ -306,7 +306,7 @@ def generate_contract_interface_content(abi: Dict[str, Any], abi_file_name: str)
 
     content = INTERFACE_FILE_TEMPLATE.format(
         contract_body=contract_body,
-        centipede_version=CENTIPEDE_VERSION,
+        moonworm_version=MOONWORM_VERSION,
         abi_file_name=abi_file_name,
     )
     return content
@@ -318,7 +318,7 @@ def generate_contract_cli_content(abi: Dict[str, Any], abi_file_name: str) -> st
 
     content = CLI_FILE_TEMPLATE.format(
         cli_content=cli_body,
-        centipede_version=CENTIPEDE_VERSION,
+        moonworm_version=MOONWORM_VERSION,
         abi_file_name=abi_file_name,
     )
 

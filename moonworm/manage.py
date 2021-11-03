@@ -4,12 +4,12 @@ from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 from web3 import Web3
 
-from centipede.contracts import ERC1155, ERC20, ERC721, CentipedeContract
+from .contracts import ERC1155, ERC20, ERC721, CentipedeContract
 
 from .web3_util import deploy_contract
 
 
-def _deploy_centipede_token_contract(
+def _deploy_moonworm_token_contract(
     web3: Web3,
     contract_class: CentipedeContract,
     token_name: str,
@@ -40,7 +40,7 @@ def deploy_ERC1155(
     deployer: ChecksumAddress,
     deployer_private_key: str,
 ) -> Tuple[HexBytes, ChecksumAddress]:
-    return _deploy_centipede_token_contract(
+    return _deploy_moonworm_token_contract(
         web3,
         ERC1155,
         token_name,
@@ -81,7 +81,7 @@ def deploy_ERC721(
     deployer: ChecksumAddress,
     deployer_private_key: str,
 ) -> Tuple[HexBytes, ChecksumAddress]:
-    return _deploy_centipede_token_contract(
+    return _deploy_moonworm_token_contract(
         web3,
         ERC721,
         token_name,

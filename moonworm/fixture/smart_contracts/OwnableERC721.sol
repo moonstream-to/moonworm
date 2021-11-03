@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "./openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "./openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract CentipedeERC721 is ERC721, Ownable {
+contract OwnableERC721 is ERC721, Ownable {
     constructor(
         string memory name_,
         string memory symbol_,

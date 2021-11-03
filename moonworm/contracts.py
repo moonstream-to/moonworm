@@ -5,19 +5,19 @@ from typing import Any, Dict
 
 _PATHS = {
     "abi": {
-        "erc20": "fixture/abis/CentipedeERC20.json",
-        "erc1155": "fixture/abis/CentipedeERC1155.json",
-        "erc721": "fixture/abis/CentipedeERC721.json",
+        "erc20": "fixture/abis/OwnableERC20.json",
+        "erc1155": "fixture/abis/OwnableERC1155.json",
+        "erc721": "fixture/abis/OwnableERC721.json",
     },
     "bytecode": {
-        "erc20": "fixture/bytecodes/CentipedeERC20.bin",
-        "erc1155": "fixture/bytecodes/CentipedeERC1155.bin",
-        "erc721": "fixture/bytecodes/CentipedeERC721.bin",
+        "erc20": "fixture/bytecodes/OwnableERC20.bin",
+        "erc1155": "fixture/bytecodes/OwnableERC1155.bin",
+        "erc721": "fixture/bytecodes/OwnableERC721.bin",
     },
 }
 
 
-class CentipedeContract:
+class MoonwormContract:
     def __init__(self, abi_path: str, bytecode_path: str) -> None:
         self._abi_path = abi_path
         self._bytecode_path = bytecode_path
@@ -35,6 +35,6 @@ class CentipedeContract:
         return bytecode
 
 
-ERC20 = CentipedeContract(_PATHS["abi"]["erc20"], _PATHS["bytecode"]["erc20"])
-ERC721 = CentipedeContract(_PATHS["abi"]["erc721"], _PATHS["bytecode"]["erc721"])
-ERC1155 = CentipedeContract(_PATHS["abi"]["erc1155"], _PATHS["bytecode"]["erc1155"])
+ERC20 = MoonwormContract(_PATHS["abi"]["erc20"], _PATHS["bytecode"]["erc20"])
+ERC721 = MoonwormContract(_PATHS["abi"]["erc721"], _PATHS["bytecode"]["erc721"])
+ERC1155 = MoonwormContract(_PATHS["abi"]["erc1155"], _PATHS["bytecode"]["erc1155"])

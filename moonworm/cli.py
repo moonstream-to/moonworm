@@ -32,6 +32,10 @@ def create_init_py(dest_dir: str, force: bool = False) -> None:
 
 
 def handle_generate(args: argparse.Namespace) -> None:
+    if not args.interface and not args.cli:
+        print("Please specify what you want to generate:")
+        print("--interface for smart contract interface")
+        print("--cli for smart contract cli")
     args.name = args.name + "_"
 
     if args.abi == "erc20":
@@ -65,15 +69,13 @@ def handle_generate(args: argparse.Namespace) -> None:
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Centipede: Manage your smart contract"
-    )
+    parser = argparse.ArgumentParser(description="Moonworm: Manage your smart contract")
 
     parser.set_defaults(func=lambda _: parser.print_help())
-    subcommands = parser.add_subparsers()
+    subcommands = parser.add_subparsers(dest="subcommands")
 
     generate_parser = subcommands.add_parser(
-        "generate", description="Centipede code generator"
+        "generate", description="Moonworm code generator"
     )
 
     generate_parser.add_argument(

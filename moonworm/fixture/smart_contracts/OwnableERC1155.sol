@@ -6,7 +6,7 @@ import "./openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import "./openzeppelin-contracts/contracts/access/Ownable.sol";
 import "./openzeppelin-contracts/contracts/utils/Counters.sol";
 
-contract CentipedeERC1155 is ERC1155, Ownable {
+contract OwnableERC1155 is ERC1155, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private ID;
 
