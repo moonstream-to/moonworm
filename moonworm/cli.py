@@ -66,6 +66,7 @@ def handle_generate(args: argparse.Namespace) -> None:
         cli_content = generate_contract_cli_content(contract_abi, abi_file_name)
         cli_name = args.name + "cli.py"
         write_file(cli_content, os.path.join(args.outdir, cli_name))
+    print(f"Files are successfully generated to:{args.outdir}")
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
