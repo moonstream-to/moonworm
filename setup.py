@@ -32,4 +32,5 @@ setup(
     python_requires=">=3.6",
     url="https://github.com/bugout-dev/moonworm/",
     entry_points={"console_scripts": ["moonworm=moonworm.cli:main"]},
+    include_package_data=True,
 )
