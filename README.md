@@ -25,7 +25,7 @@ install: `python3 -m setup.py install`
 
 ## Generating cli and python interface:
 
-### To generate interfaces for moonworm [token contracts](https://github.com/bugout-dev/moonworm/tree/main/centipede/fixture/smart_contracts):
+### To generate interfaces for moonworm [token contracts](https://github.com/bugout-dev/moonworm/tree/main/moonworm/fixture/smart_contracts):
 **ERC20:** 
 ```bash 
 moonworm generate --cli --interface -o generated/ --name erc20 --abi erc20
