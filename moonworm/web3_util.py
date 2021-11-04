@@ -151,7 +151,7 @@ def read_keys_from_env() -> Tuple[ChecksumAddress, str]:
         )
     try:
         account = Account.from_key(private_key)
-        return (Web3.toChecksumAddress(account), private_key)
+        return (Web3.toChecksumAddress(account.address), private_key)
     except:
         raise ValueError(
             "Failed to initiate account from MOONWORM_ETHEREUM_ADDRESS_PRIVATE_KEY"
