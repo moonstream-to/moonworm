@@ -21,8 +21,7 @@ PK = "0x58d23b55bc9cdce1f18c2500f40ff4ab7245df9a89505e9b1fa4851f623d241d"
 PK_ADDRESS = "0xdc544d1aa88ff8bbd2f2aec754b1f1e99e1812fd"
 
 
-def get_web3_test_provider() -> Web3:
-    return Web3(EthereumTesterProvider())
+WEB3 = Web3(EthereumTesterProvider())
 
 
 def airdrop_ether(web3: Web3, to_address: ChecksumAddress):
@@ -30,7 +29,7 @@ def airdrop_ether(web3: Web3, to_address: ChecksumAddress):
         {
             "from": web3.eth.accounts[0],
             "to": to_address,
-            "value": 100000000,
+            "value": 1000000000,
         }
     )
     web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -39,7 +38,7 @@ def airdrop_ether(web3: Web3, to_address: ChecksumAddress):
 class MoonwormEthTesterTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.basedir = os.path.dirname(os.path.dirname(__file__))
-        self.web3 = get_web3_test_provider()
+        self.web3 = WEB3
         self.tester_address = Web3.toChecksumAddress(PK_ADDRESS)
         self.tester_address_pk = PK
         airdrop_ether(self.web3, self.tester_address)

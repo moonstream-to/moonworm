@@ -5,6 +5,9 @@ from unittest.case import TestCase
 
 from web3 import Web3
 from eth_typing.evm import ChecksumAddress
+
+from moonworm.contracts import ERC1155
+from moonworm.web3_util import build_transaction, submit_transaction
 from ..manage import deploy_ERC1155
 
 
@@ -56,6 +59,13 @@ class MoonwormTestnetTestCase(TestCase):
 
     def test_deployment(self) -> None:
         contract_address = self._deploy_contract()
+        contract = self.web3.eth.contract(contract_address, abi=ERC1155.abi())
+
+        tx = build_transaction(
+            self.web3, contract.functions["create"]("1", b""), self.test_address
+        )
+
+        submit_transaction(self.web3, tx, self.test_address_pk)
 
 
 if __name__ == "__main__":
