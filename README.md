@@ -48,7 +48,7 @@ export MOONWORM_WEB3_PROVIDER_URI="<Web3 provider uri>"
 
 In case you are using Infura:
 ```bash
-export MOONWORM_WEB3_PROVIDER_URI="https://ropsten.infura.io/v3/be7152a5afaa46fba75bbc9ed5f2bc0c"
+export MOONWORM_WEB3_PROVIDER_URI="https://ropsten.infura.io/v3/<Your infura project id>"
 ```
 
 1. Generate erc20 token interface as shown above
