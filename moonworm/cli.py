@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from shutil import copyfile
+from pathlib import Path
 
 from .contracts import ERC20, ERC721
 from .generator import (
@@ -36,6 +37,9 @@ def handle_generate(args: argparse.Namespace) -> None:
         print("Please specify what you want to generate:")
         print("--interface for smart contract interface")
         print("--cli for smart contract cli")
+        return
+    Path(args.outdir).mkdir(exist_ok=True)
+
     args.name = args.name + "_"
 
     if args.abi == "erc20":
@@ -66,6 +70,7 @@ def handle_generate(args: argparse.Namespace) -> None:
         cli_content = generate_contract_cli_content(contract_abi, abi_file_name)
         cli_name = args.name + "cli.py"
         write_file(cli_content, os.path.join(args.outdir, cli_name))
+    print(f"Files are successfully generated to:{args.outdir}")
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:

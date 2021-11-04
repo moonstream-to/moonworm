@@ -4,14 +4,14 @@ from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 from web3 import Web3
 
-from .contracts import ERC1155, ERC20, ERC721, CentipedeContract
+from .contracts import ERC1155, ERC20, ERC721, MoonwormContract
 
 from .web3_util import deploy_contract
 
 
 def _deploy_moonworm_token_contract(
     web3: Web3,
-    contract_class: CentipedeContract,
+    contract_class: MoonwormContract,
     token_name: str,
     token_symbol: str,
     token_uri: str,

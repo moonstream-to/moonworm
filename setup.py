@@ -1,12 +1,14 @@
 from setuptools import find_packages, setup
 
+from moonworm.version import MOONWORM_VERSION
+
 long_description = ""
 with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
     name="moonworm",
-    version="0.0.1",
+    version=MOONWORM_VERSION,
     packages=find_packages(),
     package_data={"moonworm": ["py.typed"]},
     install_requires=["web3[tester]", "libcst", "pysha3<2.0.0,>=1.0.0"],

@@ -50,6 +50,7 @@ def get_nonce(web3: Web3, address: ChecksumAddress) -> Nonce:
 def submit_transaction(
     web3: Web3, transaction: Dict[str, Any], signer_private_key: str
 ) -> HexBytes:
+
     """
     Signs and submits json transaction to blockchain from the name of signer
     """
@@ -143,13 +144,39 @@ def read_keys_from_cli() -> Tuple[ChecksumAddress, str]:
 
 
 def read_keys_from_env() -> Tuple[ChecksumAddress, str]:
-    private_key = os.environ.get("CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY")
+    private_key = os.environ.get("MOONWORM_ETHEREUM_ADDRESS_PRIVATE_KEY")
     if private_key is None:
         raise ValueError(
-            "CENTIPEDE_ETHEREUM_ADDRESS_PRIVATE_KEY env variable is not set"
+            "MOONWORM_ETHEREUM_ADDRESS_PRIVATE_KEY env variable is not set"
         )
-    account = Account.from_key(private_key)
-    return (Web3.toChecksumAddress(account), private_key)
+    try:
+        account = Account.from_key(private_key)
+        return (Web3.toChecksumAddress(account.address), private_key)
+    except:
+        raise ValueError(
+            "Failed to initiate account from MOONWORM_ETHEREUM_ADDRESS_PRIVATE_KEY"
+        )
+
+
+def connect(web3_uri: str):
+    if web3_uri.startswith("http://") or web3_uri.startswith("https://"):
+        web3_provider = Web3.HTTPProvider(web3_uri)
+    else:
+        web3_provider = Web3.IPCProvider(web3_uri)
+    web3_client = Web3(web3_provider)
+    return web3_client
+
+
+def read_web3_provider_from_env() -> Web3:
+    provider_path = os.environ.get("MOONWORM_WEB3_PROVIDER_URI")
+    if provider_path is None:
+        raise ValueError("MOONWORM_WEB3_PROVIDER_URI env variable is not set")
+    return connect(provider_path)
+
+
+def read_web3_provider_from_cli() -> Web3:
+    provider_path = input("Enter web3 uri path: ")
+    return connect(provider_path)
 
 
 def cast_to_python_type(evm_type: str) -> Callable:

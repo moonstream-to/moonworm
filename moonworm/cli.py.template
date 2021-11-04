@@ -45,14 +45,14 @@ def populate_subparser_with_common_args(
     leaf_parser.add_argument(
         "-w",
         "--web3",
-        required=True,
-        help=f"Web3 IPC connection",
+        default=None,
+        help=f"Web3 provider uri",
     )
 
     leaf_parser.add_argument(
         "-c",
         "--contract_address",
-        required=True,
+        default=None,
         help=f"contract_address",
     )
 
@@ -62,8 +62,8 @@ def populate_deploy_subparser(
     leaf_parser.add_argument(
         "-w",
         "--web3",
-        required=True,
-        help=f"Web3 IPC connection",
+        default=None,
+        help=f"Web3 provider path",
     )
     leaf_parser.add_argument(
         "-b",
@@ -73,6 +73,16 @@ def populate_deploy_subparser(
     )
 
 {cli_content}
+
+def get_web3_provider(path_from_arg: None) -> Web3:
+    if path_from_arg is not None:
+        return connect(path_from_arg)
+    try:
+        return read_web3_provider_from_env()
+    except Exception as e:
+        print(str(e))
+        print("Reading from cli")
+        return read_web3_provider_from_cli()
 
 def get_address_and_private_key():
     try:
@@ -84,11 +94,13 @@ def get_address_and_private_key():
 
 
 def handle_args(args: argparse.Namespace):
-    # Initializng contract
-    web3 = init_web3(args.web3)
+    web3 = get_web3_provider(args.web3)
 
     kwargs = vars(args)
     if args.subcommand == "call":
+        if args.contract_address is None:
+            print("Contract address was not passed from arguments")
+            args.contract_address = input("Enter contract address you want to call: ")
         contract_address = web3.toChecksumAddress(args.contract_address)
         contract = web3.eth.contract(address=contract_address, abi=CONTRACT_ABI)
         function_name = kwargs["function_name"]
@@ -100,6 +112,9 @@ def handle_args(args: argparse.Namespace):
         print(make_function_call(contract, function_name, *call_args))
 
     if args.subcommand == "transact":
+        if args.contract_address is None:
+            print("Contract address was not passed from arguments")
+            args.contract_address = input("Enter contract address you want to transact: ")
         contract_address = web3.toChecksumAddress(args.contract_address)
         contract = web3.eth.contract(address=contract_address, abi=CONTRACT_ABI)
         function_name = kwargs["function_name"]
