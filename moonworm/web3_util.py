@@ -175,7 +175,7 @@ def read_web3_provider_from_env() -> Web3:
 
 
 def read_web3_provider_from_cli() -> Web3:
-    provider_path = input("Enter web3 uri path:")
+    provider_path = input("Enter web3 uri path: ")
     return connect(provider_path)
 
 

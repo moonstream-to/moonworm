@@ -37,7 +37,7 @@ def handle_generate(args: argparse.Namespace) -> None:
         print("Please specify what you want to generate:")
         print("--interface for smart contract interface")
         print("--cli for smart contract cli")
-
+        return
     Path(args.outdir).mkdir(exist_ok=True)
 
     args.name = args.name + "_"
