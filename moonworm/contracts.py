@@ -1,7 +1,6 @@
 import json
 import os
-from typing import Any, Dict
-
+from typing import Any, Dict, List
 
 _PATHS = {
     "abi": {
@@ -22,7 +21,7 @@ class MoonwormContract:
         self._abi_path = abi_path
         self._bytecode_path = bytecode_path
 
-    def abi(self) -> Dict[str, Any]:
+    def abi(self) -> List[Dict[str, Any]]:
         base_dir = os.path.dirname(__file__)
         with open(os.path.join(base_dir, self._abi_path), "r") as ifp:
             abi = json.load(ifp)

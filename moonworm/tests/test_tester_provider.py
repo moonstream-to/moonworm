@@ -1,13 +1,13 @@
 import os
-from typing import Tuple
 import unittest
+from typing import Tuple
 
-from eth_typing.evm import ChecksumAddress
-from web3 import Web3, EthereumTesterProvider
 from ens import ENS
+from eth_typing.evm import ChecksumAddress
+from web3 import EthereumTesterProvider, Web3
 
+from ..contracts import ERC20, ERC721, ERC1155
 from ..manage import deploy_ERC1155
-from ..contracts import ERC20, ERC1155, ERC721
 from ..web3_util import (
     build_transaction,
     decode_transaction_input,

@@ -2,14 +2,13 @@
 import datetime
 import logging
 import time
-from typing import Iterable, List, Tuple, Optional, Callable
+from typing import Callable, Iterable, List, Optional, Tuple
 
-from typing import Optional
 from eth_abi.codec import ABICodec
 from eth_typing.evm import ChecksumAddress
 from web3 import Web3
-from web3._utils.filters import construct_event_filter_params
 from web3._utils.events import get_event_data
+from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import AttributeDict
 from web3.exceptions import BlockNotFound
 from web3.types import ABIEvent, FilterParams

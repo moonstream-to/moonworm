@@ -1,13 +1,12 @@
+import logging
 import sys
 import time
-import logging
 
-from web3.providers.rpc import HTTPProvider
 from web3 import Web3
+from web3.providers.rpc import HTTPProvider
 
 from .log_scanner import EventScanner
 from .state import JSONifiedState
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
