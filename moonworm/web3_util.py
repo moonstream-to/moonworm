@@ -96,9 +96,12 @@ def deploy_contract(
     - constructor_arguments: arguments that are passed to `constructor` function  of the smart contract
     """
     contract = web3.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
-    transaction = build_transaction(
-        web3, contract.constructor(*constructor_arguments), deployer
-    )
+    if constructor_arguments is None:
+        transaction = build_transaction(web3, contract.constructor(), deployer)
+    else:
+        transaction = build_transaction(
+            web3, contract.constructor(*constructor_arguments), deployer
+        )
 
     transaction_hash = submit_transaction(web3, transaction, deployer_private_key)
     transaction_receipt = wait_for_transaction_receipt(web3, transaction_hash)
