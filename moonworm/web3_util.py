@@ -1,14 +1,16 @@
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import os
 import getpass
 
-from eth_account.account import Account
+from eth_account.account import Account  # type: ignore
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
-from web3 import Web3, eth
+from web3 import Web3
+import web3
 from web3.contract import Contract, ContractFunction
-from web3.types import Nonce, TxParams, TxReceipt, Wei
+from web3.providers.ipc import IPCProvider
+from web3.providers.rpc import HTTPProvider
+from web3.types import ABI, Nonce, TxParams, TxReceipt, Wei
 
 
 class ContractConstructor:
@@ -18,9 +20,9 @@ class ContractConstructor:
 
 def build_transaction(
     web3: Web3,
-    builder: ContractFunction,
+    builder: Union[ContractFunction, Any],
     sender: ChecksumAddress,
-) -> Dict[str, Any]:
+) -> Union[TxParams, Any]:
     """
     Builds transaction json with the given arguments. It is not submitting transaction
     Arguments:
@@ -30,6 +32,7 @@ def build_transaction(
     - maxFeePerGas: Optional, max priority fee for dynamic fee transactions in Wei
     - maxPriorityFeePerGas: Optional the part of the fee that goes to the miner
     """
+
     transaction = builder.buildTransaction(
         {
             "from": sender,
@@ -48,7 +51,7 @@ def get_nonce(web3: Web3, address: ChecksumAddress) -> Nonce:
 
 
 def submit_transaction(
-    web3: Web3, transaction: Dict[str, Any], signer_private_key: str
+    web3: Web3, transaction: Union[TxParams, Any], signer_private_key: str
 ) -> HexBytes:
 
     """
@@ -77,7 +80,7 @@ def wait_for_transaction_receipt(web3: Web3, transaction_hash: HexBytes):
 def deploy_contract(
     web3: Web3,
     contract_bytecode: str,
-    contract_abi: Dict[str, Any],
+    contract_abi: List[Dict[str, Any]],
     deployer: ChecksumAddress,
     deployer_private_key: str,
     constructor_arguments: Optional[List[Any]] = None,
@@ -106,7 +109,7 @@ def deploy_contract(
 def deploy_contract_from_constructor_function(
     web3: Web3,
     contract_bytecode: str,
-    contract_abi: Dict[str, Any],
+    contract_abi: List[Dict[str, Any]],
     deployer: ChecksumAddress,
     deployer_private_key: str,
     constructor: ContractConstructor,
@@ -158,7 +161,8 @@ def read_keys_from_env() -> Tuple[ChecksumAddress, str]:
         )
 
 
-def connect(web3_uri: str):
+def connect(web3_uri: str) -> Web3:
+    web3_provider: Union[IPCProvider, HTTPProvider] = Web3.IPCProvider()
     if web3_uri.startswith("http://") or web3_uri.startswith("https://"):
         web3_provider = Web3.HTTPProvider(web3_uri)
     else:
