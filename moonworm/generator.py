@@ -1,9 +1,10 @@
 import keyword
 import logging
 import os
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
 
 import libcst as cst
+from libcst._nodes.statement import BaseCompoundStatement
 from web3.types import ABIFunction
 
 from .version import MOONWORM_VERSION
@@ -190,7 +191,7 @@ def generate_argument_parser_function(abi: List[Dict[str, Any]]) -> cst.Function
     def generate_function_subparser(
         function_abi: Dict[str, Any],
         description: str,
-    ) -> List[cst.SimpleStatementLine]:
+    ) -> List[Union[cst.SimpleStatementLine, cst.BaseCompoundStatement]]:
         function_name = normalize_abi_name(function_abi["name"])
         subparser_init = [
             cst.parse_statement(
@@ -229,7 +230,7 @@ def generate_argument_parser_function(abi: List[Dict[str, Any]]) -> cst.Function
                 cst.parse_statement(
                     f"populate_subparser_with_common_args({function_name}_transact)"
                 ),
-                cst.EmptyLine(),
+                cast(cst.SimpleStatementLine, cst.EmptyLine()),
             ]
         )
 
