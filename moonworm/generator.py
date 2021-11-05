@@ -1,9 +1,10 @@
+import keyword
 import logging
 import os
-from typing import Any, Dict, List, Union
-import keyword
+from typing import Any, Dict, List, Union, cast
 
 import libcst as cst
+from libcst._nodes.statement import BaseCompoundStatement
 from web3.types import ABIFunction
 
 from .version import MOONWORM_VERSION
@@ -112,7 +113,7 @@ def generate_contract_class(
 
 
 def generate_contract_constructor_function(
-    func_object: Union[Dict[str, Any], int]
+    func_object: Dict[str, Any]
 ) -> cst.FunctionDef:
     default_param_name = "arg"
     default_counter = 1
@@ -148,9 +149,7 @@ def generate_contract_constructor_function(
     )
 
 
-def generate_contract_function(
-    func_object: Union[Dict[str, Any], int]
-) -> cst.FunctionDef:
+def generate_contract_function(func_object: Dict[str, Any]) -> cst.FunctionDef:
 
     default_param_name = "arg"
     default_counter = 1
@@ -188,11 +187,11 @@ def generate_contract_function(
     )
 
 
-def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
+def generate_argument_parser_function(abi: List[Dict[str, Any]]) -> cst.FunctionDef:
     def generate_function_subparser(
-        function_abi: ABIFunction,
+        function_abi: Dict[str, Any],
         description: str,
-    ) -> List[cst.SimpleStatementLine]:
+    ) -> List[Union[cst.SimpleStatementLine, cst.BaseCompoundStatement]]:
         function_name = normalize_abi_name(function_abi["name"])
         subparser_init = [
             cst.parse_statement(
@@ -231,7 +230,7 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
                 cst.parse_statement(
                     f"populate_subparser_with_common_args({function_name}_transact)"
                 ),
-                cst.EmptyLine(),
+                cast(cst.SimpleStatementLine, cst.EmptyLine()),
             ]
         )
 
@@ -301,7 +300,9 @@ def generate_argument_parser_function(abi: Dict[str, Any]) -> cst.FunctionDef:
     )
 
 
-def generate_contract_interface_content(abi: Dict[str, Any], abi_file_name: str) -> str:
+def generate_contract_interface_content(
+    abi: List[Dict[str, Any]], abi_file_name: str
+) -> str:
     contract_body = cst.Module(body=[generate_contract_class(abi)]).code
 
     content = INTERFACE_FILE_TEMPLATE.format(
@@ -312,7 +313,7 @@ def generate_contract_interface_content(abi: Dict[str, Any], abi_file_name: str)
     return content
 
 
-def generate_contract_cli_content(abi: Dict[str, Any], abi_file_name: str) -> str:
+def generate_contract_cli_content(abi: List[Dict[str, Any]], abi_file_name: str) -> str:
 
     cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
 

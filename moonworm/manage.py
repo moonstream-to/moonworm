@@ -4,8 +4,7 @@ from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 from web3 import Web3
 
-from .contracts import ERC1155, ERC20, ERC721, MoonwormContract
-
+from .contracts import ERC20, ERC721, ERC1155, MoonwormContract
 from .web3_util import deploy_contract
 
 
