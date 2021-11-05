@@ -1,8 +1,8 @@
 import argparse
 import json
 import os
-from shutil import copyfile
 from pathlib import Path
+from shutil import copyfile
 
 from .contracts import ERC20, ERC721
 from .generator import (

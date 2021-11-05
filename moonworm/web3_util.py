@@ -1,12 +1,12 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-import os
 import getpass
+import os
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import web3
 from eth_account.account import Account  # type: ignore
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 from web3 import Web3
-import web3
 from web3.contract import Contract, ContractFunction
 from web3.providers.ipc import IPCProvider
 from web3.providers.rpc import HTTPProvider

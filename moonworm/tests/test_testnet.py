@@ -1,13 +1,14 @@
-from typing import Tuple
 import os
 import unittest
+from typing import Tuple
 from unittest.case import TestCase
 
-from web3 import Web3
 from eth_typing.evm import ChecksumAddress
+from web3 import Web3
 
 from moonworm.contracts import ERC1155
 from moonworm.web3_util import build_transaction, submit_transaction
+
 from ..manage import deploy_ERC1155
 
 

@@ -2,7 +2,6 @@ import json
 import os
 from typing import Any, Dict, List
 
-
 _PATHS = {
     "abi": {
         "erc20": "fixture/abis/OwnableERC20.json",

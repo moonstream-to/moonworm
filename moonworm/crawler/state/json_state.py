@@ -1,6 +1,6 @@
+import datetime
 import json
 import time
-import datetime
 from typing import Optional
 
 from web3.datastructures import AttributeDict

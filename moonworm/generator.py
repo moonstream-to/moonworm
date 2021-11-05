@@ -1,7 +1,7 @@
+import keyword
 import logging
 import os
 from typing import Any, Dict, List, Union
-import keyword
 
 import libcst as cst
 from web3.types import ABIFunction
