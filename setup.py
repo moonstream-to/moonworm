@@ -16,6 +16,7 @@ setup(
         "dev": [
             "black",
             "mypy",
+            "isort",
             "wheel",
         ],
         "distribute": ["setuptools", "twine", "wheel"],
