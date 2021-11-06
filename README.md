@@ -17,10 +17,10 @@ activate virtual env: `source .venv/bin/activate`
 install: `python3 -m setup.py install`
 
 # Usage
-## Requirments:
-### In oreder to have ability to deploy/transact smart contracts:
-1. Have a ethereum accaunt for testing purposes. Create one with [metamask](https://metamask.io/) if you don't have
-2. Have access to ethereum node (to testnet like Ropsten for testing purposes). Create [Infura accaunt](https://infura.io/) account if you don't have, it is free
+## Requirements:
+### In order to have ability to deploy/transact smart contracts:
+1. Have an Ethereum account for testing purposes. Create one with [metamask](https://metamask.io/) if you don't have
+2. Have access to Ethereum node (to testnet like Ropsten for testing purposes). Create [Infura accaunt](https://infura.io/) account if you don't have, it is free
 3. Some ether to use in your account. Use [Ropsten faucet](https://faucet.ropsten.be/) to get some ether in ropsten testnet
 
 ## Generating cli and python interface:
@@ -53,7 +53,7 @@ export MOONWORM_WEB3_PROVIDER_URI="https://ropsten.infura.io/v3/<Your infura pro
 
 1. Generate erc20 token interface as shown above
 2. Run `python3 -m generated.erc20_cli -h` to make sure you have generated files correctly
-3. Lets deploy : 
+3. Let's deploy : 
     ``` bash 
     python3 -m generated.erc20_cli deploy <Token name> <Token sumbol> <Token owner> -b generated/erc20_bytecode.bin
     ```
@@ -69,14 +69,14 @@ export MOONWORM_WEB3_PROVIDER_URI="https://ropsten.infura.io/v3/<Your infura pro
     ```
     
    It should print name of token.
-5. Lets mint some tokens to your address:
+5. Let's mint some tokens to your address:
     ``` bash
     python3 -m generated.erc20_cli transact mint <Your address> <Amount of token to mint> -c <Deployed contract address>
     ```
     
     It will ask your `private key` and confirmation to send transaction.
     
-6. Lets transfer some tokens:
+6. Let's transfer some tokens:
     You can send me some tokens:
     ``` bash
     python3 -m generated.erc20_cli transact transfer 0xa75720c500ae1551c08074E5A9849EA92528401D <Amount of token to transfer> -c <Deployed contract address>
