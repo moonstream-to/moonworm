@@ -2,17 +2,51 @@ import os
 import pickle
 import shutil
 import tempfile
+from typing import Any, Dict, List
 import unittest
 
 import web3
+from web3.main import Web3
 
 from moonworm.contracts import ERC20
 from moonworm.crawler.function_call_crawler import (
+    EthereumStateProvider,
     FunctionCallCrawler,
     PickleFileState,
     Web3StateProvider,
 )
-from moonworm.manage import deploy_ERC20
+
+
+class EthereumTesterStateProvider(EthereumStateProvider):
+    """
+    This wrapper is necessary because the EthereumTesterProvider returns different attributes on
+    transaction objects than we would receive from a proper Ethereum JSON RPC API.
+    """
+
+    def __init__(self, web3_state_provider: Web3StateProvider):
+        self.internal_provider = web3_state_provider
+
+    def get_last_block_number(self) -> int:
+        return self.internal_provider.get_last_block_number()
+
+    def get_block_timestamp(self, block_number: int) -> int:
+        return self.internal_provider.get_block_timestamp(block_number)
+
+    def get_transactions_to_address(
+        self, address: str, block_number: int
+    ) -> List[Dict[str, Any]]:
+        transactions = self.internal_provider.get_transactions_to_address(
+            address, block_number
+        )
+
+        return [
+            {
+                "input": transaction["data"],
+                "blockNumber": transaction["block_number"],
+                **transaction,
+            }
+            for transaction in transactions
+        ]
 
 
 class TestFunctionCallCrawlerWithERC20Token(unittest.TestCase):
@@ -28,7 +62,8 @@ class TestFunctionCallCrawlerWithERC20Token(unittest.TestCase):
         self.crawldir = tempfile.mkdtemp()
         self.pickle_file = os.path.join(self.crawldir, "state.pkl")
 
-        self.web3_state = Web3StateProvider(self.web3_client)
+        self.internal_web3_state = Web3StateProvider(self.web3_client)
+        self.web3_state = EthereumTesterStateProvider(self.internal_web3_state)
         self.crawler_state = PickleFileState(self.pickle_file)
 
         self.web3_client.eth.default_account = self.web3_client.eth.accounts[0]

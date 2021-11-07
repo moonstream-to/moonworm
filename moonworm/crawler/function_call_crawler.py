@@ -30,21 +30,23 @@ class EthereumStateProvider(ABC):
     """
 
     @abstractmethod
-    def get_last_block_number(self):
+    def get_last_block_number(self) -> int:
         """
         Returns the last block number.
         """
         pass
 
     @abstractmethod
-    def get_block_timestamp(self, block_number: int):
+    def get_block_timestamp(self, block_number: int) -> int:
         """
         Returns the timestamp of the block with the given block number.
         """
         pass
 
     @abstractmethod
-    def get_transactions_to_address(self, address, block_number: int):
+    def get_transactions_to_address(
+        self, address, block_number: int
+    ) -> List[Dict[str, Any]]:
         """
         Returns all transactions to the given address in the given block number.
         """
@@ -132,14 +134,16 @@ class Web3StateProvider(EthereumStateProvider):
     def __init__(self, w3: Web3):
         self.w3 = w3
 
-    def get_last_block_number(self):
+    def get_last_block_number(self) -> int:
         return self.w3.eth.block_number
 
-    def get_block_timestamp(self, block_number: int):
+    def get_block_timestamp(self, block_number: int) -> int:
         block_data = self.w3.eth.get_block(block_number)
         return block_data["timestamp"]
 
-    def get_transactions_to_address(self, address: ChecksumAddress, block_number: int):
+    def get_transactions_to_address(
+        self, address: ChecksumAddress, block_number: int
+    ) -> List[Dict[str, Any]]:
         all_transactions = self.w3.eth.get_block(block_number, full_transactions=True)[
             "transactions"
         ]
@@ -165,13 +169,13 @@ class FunctionCallCrawler:
         self.contract = Web3().eth.contract(abi=self.contract_abi)
 
     def process_transaction(self, transaction: Dict[str, Any]):
-        raw_function_call = self.contract.decode_function_input(transaction["data"])
+        raw_function_call = self.contract.decode_function_input(transaction["input"])
         function_name = raw_function_call[0].fn_name
         function_args = raw_function_call[1]
         function_call = ContractFunctionCall(
-            block_number=transaction["block_number"],
+            block_number=transaction["blockNumber"],
             block_timestamp=self.ethereum_state_provider.get_block_timestamp(
-                transaction["block_number"]
+                transaction["blockNumber"]
             ),
             transaction_hash=transaction["hash"],
             contract_address=transaction["to"],
