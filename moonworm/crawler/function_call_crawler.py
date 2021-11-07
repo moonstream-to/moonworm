@@ -192,19 +192,3 @@ class FunctionCallCrawler:
             self.state.state
         if flush_state:
             self.state.flush()
-
-
-# crawler = FunctionCallCrawler(
-#     state=MockupState(),
-#     ethereum_state_provider=Web3StateProvider(
-#         w3=Web3(Web3.HTTPProvider("https://mainnet.infura.io/v3/<Project Id>"))
-#     ),
-#     contract_abi=ERC1155.abi(),
-#     contract_addresses=[
-#         Web3.toChecksumAddress("0x495f947276749ce646f68ac8c248420045cb7b5e"),
-#         Web3.toChecksumAddress("0x3b7335f3f1771122cd0107416b1da1b2fb7e94dd"),
-#     ],
-# )
-
-# current_block_number = crawler.ethereum_state_provider.get_last_block_number()
-# crawler.crawl(from_block=current_block_number - 30, to_block=current_block_number)
