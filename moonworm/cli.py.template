@@ -23,7 +23,8 @@ for abi_item in CONTRACT_ABI:
         CONTRACT_FUNCTIONS[abi_item["name"]] = abi_item
     if abi_item["type"] == "constructor":
         CONTRACT_FUNCTIONS["constructor"] = abi_item
-
+if CONTRACT_FUNCTIONS["constructor"] is None:
+    CONTRACT_FUNCTIONS["constructor"] = {{"inputs" : []}}
 
 def init_web3(ipc_path: str) -> Web3:
     return Web3(web3.HTTPProvider(ipc_path))

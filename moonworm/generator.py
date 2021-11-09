@@ -96,7 +96,14 @@ def generate_contract_class(
             ]
         ),
     )
-    contract_constructor = [c for c in abi if c["type"] == "constructor"][0]
+    contract_constructor = [c for c in abi if c["type"] == "constructor"]
+    if len(contract_constructor) == 1:
+        contract_constructor = contract_constructor[0]
+    elif len(contract_constructor) == 0:
+        contract_constructor = {"inputs": []}
+    else:
+        raise ValueError("Multiple constructors found in ABI")
+
     contract_constructor["name"] = "constructor"
     class_functions = (
         [class_constructor]
@@ -261,7 +268,14 @@ def generate_argument_parser_function(abi: List[Dict[str, Any]]) -> cst.Function
         subparsers.extend(generate_function_subparser(function_abi, "description"))
 
     # Deploy argparser:
-    contract_constructor = [item for item in abi if item["type"] == "constructor"][0]
+    contract_constructor = [item for item in abi if item["type"] == "constructor"]
+    if len(contract_constructor) == 1:
+        contract_constructor = contract_constructor[0]
+    elif len(contract_constructor) == 0:
+        contract_constructor = {"inputs": []}
+    else:
+        raise Exception("Multiple constructors found")
+
     deploy_argument_parsers = []
     default_arg_counter = 1
     for arg in contract_constructor["inputs"]:
