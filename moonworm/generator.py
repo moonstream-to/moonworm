@@ -63,6 +63,8 @@ def python_type(evm_type: str) -> List[str]:
         return ["ChecksumAddress"]
     elif evm_type == "bool":
         return ["bool"]
+    elif evm_type == "tuple[]":
+        return ["list"]
     else:
         raise ValueError(f"Cannot convert to python type {evm_type}")
 
