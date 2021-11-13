@@ -1,20 +1,20 @@
+import pprint as pp
 import time
 from typing import Any, Dict, List
+
+import web3
 from eth_typing.evm import ChecksumAddress
 from tqdm import tqdm
 from web3 import Web3
-import pprint as pp
-
-import web3
 
 from .contracts import CU, ERC721
-from .crawler.log_scanner import _fetch_events_chunk
 from .crawler.function_call_crawler import (
     ContractFunctionCall,
-    Web3StateProvider,
     FunctionCallCrawler,
     FunctionCallCrawlerState,
+    Web3StateProvider,
 )
+from .crawler.log_scanner import _fetch_events_chunk
 
 
 class MockState(FunctionCallCrawlerState):

@@ -5,6 +5,7 @@ from pathlib import Path
 from shutil import copyfile
 
 from web3.main import Web3
+from web3.middleware import geth_poa_middleware
 
 from moonworm.watch import watch_contract
 
@@ -13,8 +14,6 @@ from .generator import (
     generate_contract_cli_content,
     generate_contract_interface_content,
 )
-
-from web3.middleware import geth_poa_middleware
 
 
 def write_file(content: str, path: str):

@@ -3,16 +3,16 @@ import tempfile
 import unittest
 
 from hexbytes.main import HexBytes
+from web3 import Web3
 
 from moonworm.contracts import ERC1155
 
-from ...web3_util import connect
 from ...crawler.function_call_crawler import (
     FunctionCallCrawler,
-    Web3StateProvider,
     PickleFileState,
+    Web3StateProvider,
 )
-from web3 import Web3
+from ...web3_util import connect
 
 
 def get_web3_provider():

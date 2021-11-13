@@ -1,6 +1,7 @@
-from moonstreamdb.models import EthereumLabel, EthereumBlock
-from web3 import Web3
+from moonstreamdb.models import EthereumBlock, EthereumLabel
 from sqlalchemy.orm import Query, Session
+from web3 import Web3
+
 from .event_scanner_state import EventScannerState
 
 BLOCK_TIMESTAMP_CACHE = {}

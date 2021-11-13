@@ -2,8 +2,8 @@ import os
 import pickle
 import shutil
 import tempfile
-from typing import Any, Dict, List
 import unittest
+from typing import Any, Dict, List
 
 import web3
 from web3.main import Web3

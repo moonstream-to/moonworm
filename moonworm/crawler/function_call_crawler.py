@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
 import os
 import pickle
+from abc import ABC, abstractmethod
+from dataclasses import asdict, dataclass
 from typing import Any, Dict, List
 
 from eth_typing.evm import ChecksumAddress
