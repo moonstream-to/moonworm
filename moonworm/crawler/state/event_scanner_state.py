@@ -46,7 +46,7 @@ class EventScannerState(ABC):
         """
 
     @abstractmethod
-    def delete_data(self, since_block: int) -> int:
+    def delete_data(self, since_block: int):
         """Delete any data since this block was scanned.
 
         Purges any potential minor reorg data.

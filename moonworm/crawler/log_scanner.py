@@ -102,13 +102,6 @@ def _fetch_events_chunk(
     if addresses:
         event_filter_params["address"] = addresses
 
-    logger.debug(
-        "Querying eth_getLogs with the following parameters: %s",
-        event_filter_params,
-    )
-
-    # Call JSON-RPC API on your Ethereum node.
-    # get_logs() returns raw AttributedDict entries
     logs = web3.eth.get_logs(event_filter_params)
 
     # Convert raw binary data to Python proxy objects as described by ABI
