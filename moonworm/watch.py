@@ -1,5 +1,6 @@
 import time
 from typing import Any, Dict, List
+from eth_typing.evm import ChecksumAddress
 from tqdm import tqdm
 from web3 import Web3
 import pprint as pp
@@ -41,10 +42,10 @@ class MockState(FunctionCallCrawlerState):
 
 def watch_contract(
     web3: Web3,
-    contract_address: str,
+    contract_address: ChecksumAddress,
     contract_abi: List[Dict[str, Any]],
     num_confirmations: int = 10,
-    sleep_time: int = 1,
+    sleep_time: float = 1,
 ) -> None:
     """
     Watches a contract for events and calls.
