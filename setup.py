@@ -11,7 +11,7 @@ setup(
     version=MOONWORM_VERSION,
     packages=find_packages(),
     package_data={"moonworm": ["py.typed"]},
-    install_requires=["web3[tester]", "libcst", "pysha3<2.0.0,>=1.0.0"],
+    install_requires=["web3[tester]", "tqdm", "libcst", "pysha3<2.0.0,>=1.0.0", "moonstreamdb"],
     extras_require={
         "dev": [
             "black",
