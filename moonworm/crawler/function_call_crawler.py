@@ -133,20 +133,33 @@ class Web3StateProvider(EthereumStateProvider):
 
     def __init__(self, w3: Web3):
         self.w3 = w3
+        self.blocks_cache = {}
 
     def get_last_block_number(self) -> int:
         return self.w3.eth.block_number
 
+    def _get_block(self, block_number: int) -> Dict[str, Any]:
+        if block_number in self.blocks_cache:
+            return self.blocks_cache[block_number]
+        block = self.w3.eth.getBlock(block_number, full_transactions=True)
+
+        # clear cache if it grows too large
+        if len(self.blocks_cache) > 50:
+            self.blocks_cache = {}
+
+        self.blocks_cache[block_number] = block
+        return block
+
     def get_block_timestamp(self, block_number: int) -> int:
-        block_data = self.w3.eth.get_block(block_number)
-        return block_data["timestamp"]
+        block = self._get_block(block_number)
+        return block["timestamp"]
 
     def get_transactions_to_address(
         self, address: ChecksumAddress, block_number: int
     ) -> List[Dict[str, Any]]:
-        all_transactions = self.w3.eth.get_block(block_number, full_transactions=True)[
-            "transactions"
-        ]
+        block = self._get_block(block_number)
+
+        all_transactions = block["transactions"]
         return [tx for tx in all_transactions if tx["to"] == address]
 
 
@@ -169,21 +182,26 @@ class FunctionCallCrawler:
         self.contract = Web3().eth.contract(abi=self.contract_abi)
 
     def process_transaction(self, transaction: Dict[str, Any]):
-        raw_function_call = self.contract.decode_function_input(transaction["input"])
-        function_name = raw_function_call[0].fn_name
-        function_args = raw_function_call[1]
-        function_call = ContractFunctionCall(
-            block_number=transaction["blockNumber"],
-            block_timestamp=self.ethereum_state_provider.get_block_timestamp(
-                transaction["blockNumber"]
-            ),
-            transaction_hash=transaction["hash"],
-            contract_address=transaction["to"],
-            caller_address=transaction["from"],
-            function_name=function_name,
-            function_args=function_args,
-        )
-        self.state.register_call(function_call)
+        try:
+            raw_function_call = self.contract.decode_function_input(
+                transaction["input"]
+            )
+            function_name = raw_function_call[0].fn_name
+            function_args = raw_function_call[1]
+            function_call = ContractFunctionCall(
+                block_number=transaction["blockNumber"],
+                block_timestamp=self.ethereum_state_provider.get_block_timestamp(
+                    transaction["blockNumber"]
+                ),
+                transaction_hash=transaction["hash"],
+                contract_address=transaction["to"],
+                caller_address=transaction["from"],
+                function_name=function_name,
+                function_args=function_args,
+            )
+            self.state.register_call(function_call)
+        except Exception as e:
+            print(f"Failed to decode function call in tx: {transaction['hash'].hex()}")
 
     def crawl(self, from_block: int, to_block: int, flush_state: bool = False):
         for block_number in range(from_block, to_block + 1):
