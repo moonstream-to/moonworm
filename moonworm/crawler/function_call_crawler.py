@@ -3,7 +3,6 @@ import pickle
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List
-
 from eth_typing.evm import ChecksumAddress
 from web3 import Web3
 from web3.contract import Contract
@@ -21,6 +20,8 @@ class ContractFunctionCall:
     caller_address: str
     function_name: str
     function_args: Dict[str, Any]
+    gas_used: int
+    status: int
 
 
 class EthereumStateProvider(ABC):
@@ -133,7 +134,11 @@ class Web3StateProvider(EthereumStateProvider):
 
     def __init__(self, w3: Web3):
         self.w3 = w3
+
         self.blocks_cache = {}
+
+    def get_transaction_reciept(self, transaction_hash: str) -> Dict[str, Any]:
+        return self.w3.eth.get_transaction_receipt(transaction_hash)
 
     def get_last_block_number(self) -> int:
         return self.w3.eth.block_number
@@ -163,6 +168,32 @@ class Web3StateProvider(EthereumStateProvider):
         return [tx for tx in all_transactions if tx["to"] == address]
 
 
+# b'\x8d\xa5\xcb['
+# Need to utfy because args contains bytes
+# For now casting to hex, because that byte at top is function signature
+# .decode() fails
+def utfy_dict(dic):
+    if isinstance(dic, str):
+        return dic
+
+    elif isinstance(dic, bytes):
+        return Web3().toHex(dic)
+
+    elif isinstance(dic, tuple):
+        return tuple(utfy_dict(x) for x in dic)
+    elif isinstance(dic, dict):
+        for key in dic:
+            dic[key] = utfy_dict(dic[key])
+        return dic
+    elif isinstance(dic, list):
+        new_l = []
+        for e in dic:
+            new_l.append(utfy_dict(e))
+        return new_l
+    else:
+        return dic
+
+
 class FunctionCallCrawler:
     """
     Crawls the Ethereum blockchain for function calls.
@@ -187,21 +218,32 @@ class FunctionCallCrawler:
                 transaction["input"]
             )
             function_name = raw_function_call[0].fn_name
-            function_args = raw_function_call[1]
+
+            function_args = utfy_dict(raw_function_call[1])
+
+            # TODO: check transaction reciept for none
+            transaction_reciept = self.ethereum_state_provider.get_transaction_reciept(
+                transaction["hash"]
+            )
+
             function_call = ContractFunctionCall(
                 block_number=transaction["blockNumber"],
                 block_timestamp=self.ethereum_state_provider.get_block_timestamp(
                     transaction["blockNumber"]
                 ),
-                transaction_hash=transaction["hash"],
+                transaction_hash=transaction["hash"].hex(),
                 contract_address=transaction["to"],
                 caller_address=transaction["from"],
                 function_name=function_name,
                 function_args=function_args,
+                status=transaction_reciept["status"],
+                gas_used=transaction_reciept["gasUsed"],
             )
+
             self.state.register_call(function_call)
         except Exception as e:
             print(f"Failed to decode function call in tx: {transaction['hash'].hex()}")
+            print(e)
 
     def crawl(self, from_block: int, to_block: int, flush_state: bool = False):
         for block_number in range(from_block, to_block + 1):

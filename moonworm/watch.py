@@ -1,6 +1,6 @@
 import pprint as pp
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import web3
 from eth_typing.evm import ChecksumAddress
@@ -46,6 +46,7 @@ def watch_contract(
     contract_abi: List[Dict[str, Any]],
     num_confirmations: int = 10,
     sleep_time: float = 1,
+    start_block: Optional[int] = None,
 ) -> None:
     """
     Watches a contract for events and calls.
@@ -60,7 +61,11 @@ def watch_contract(
 
     event_abis = [item for item in contract_abi if item["type"] == "event"]
 
-    current_block = web3.eth.blockNumber - num_confirmations * 2
+    if start_block is None:
+        current_block = web3.eth.blockNumber - num_confirmations * 2
+    else:
+        current_block = start_block
+
     progress_bar = tqdm(unit=" blocks")
     progress_bar.set_description(f"Current block {current_block}")
     while True:
