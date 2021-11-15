@@ -3,6 +3,7 @@ import pickle
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List
+
 from eth_typing.evm import ChecksumAddress
 from web3 import Web3
 from web3.contract import Contract

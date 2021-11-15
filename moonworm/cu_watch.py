@@ -1,16 +1,16 @@
-from os import stat
-import pprint as pp
-from re import S
-import time
-from typing import Any, Dict, List, Optional, cast
 import json
+import pprint as pp
+import time
+from os import stat
+from re import S
+from typing import Any, Dict, List, Optional, cast
 
 import web3
 from eth_typing.evm import ChecksumAddress
+from moonstreamdb.models import PolygonLabel
+from sqlalchemy.orm import Query, Session
 from tqdm import tqdm
 from web3 import Web3
-
-from moonstreamdb.models import PolygonLabel
 
 from .contracts import CU, ERC721
 from .crawler.function_call_crawler import (
@@ -20,8 +20,6 @@ from .crawler.function_call_crawler import (
     Web3StateProvider,
 )
 from .crawler.log_scanner import _fetch_events_chunk
-
-from sqlalchemy.orm import Query, Session
 
 
 def _get_last_crawled_block(

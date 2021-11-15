@@ -7,9 +7,8 @@ from shutil import copyfile
 from web3.main import Web3
 from web3.middleware import geth_poa_middleware
 
-from moonworm.watch import watch_contract
 from moonworm.cu_watch import watch_cu_contract
-
+from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721
 from .generator import (
