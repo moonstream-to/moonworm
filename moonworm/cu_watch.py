@@ -1,4 +1,5 @@
 import json
+import logging
 import pprint as pp
 import time
 from os import stat
@@ -20,6 +21,9 @@ from .crawler.function_call_crawler import (
     Web3StateProvider,
 )
 from .crawler.log_scanner import _fetch_events_chunk
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def _get_last_crawled_block(
@@ -60,14 +64,13 @@ def _add_function_call_labels(
         )
         .all()
     )
-    print(f"{len(existing_function_call_labels)} existing labels")
     # deletin existing labels
     for label in existing_function_call_labels:
         session.delete(label)
 
     try:
         if existing_function_call_labels:
-            print(
+            logger.info(
                 f"Deleting {len(existing_function_call_labels)} existing event labels"
             )
             session.commit()
@@ -75,7 +78,7 @@ def _add_function_call_labels(
         try:
             session.commit()
         except:
-            print(f"Failed!!!\n{e}")
+            logger.error(f"Failed!!!\n{e}")
             session.rollback()
 
     for function_call in function_calls:
@@ -96,13 +99,12 @@ def _add_function_call_labels(
         )
         session.add(label)
     try:
-        print("Committing tx_call labels to database...")
         session.commit()
     except Exception as e:
         try:
             session.commit()
         except:
-            print(f"Failed!!!\n{e}")
+            logger.error(f"Failed!!!\n{e}")
             session.rollback()
 
 
@@ -128,13 +130,13 @@ def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
 
     try:
         if existing_event_labels:
-            print(f"Deleting {len(existing_event_labels)} existing event labels")
+            logger.error(f"Deleting {len(existing_event_labels)} existing event labels")
             session.commit()
     except Exception as e:
         try:
             session.commit()
         except:
-            print(f"Failed!!!\n{e}")
+            logger.error(f"Failed!!!\n{e}")
             session.rollback()
 
     for event in events:
@@ -158,7 +160,7 @@ def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
         try:
             session.commit()
         except:
-            print(f"Failed!!!\n{e}")
+            logger.error(f"Failed!!!\n{e}")
             session.rollback()
 
 
@@ -209,20 +211,20 @@ def watch_cu_contract(
     if start_block is None:
         if last_crawled_block is not None:
             current_block = last_crawled_block
-            print(f"Starting from block {current_block}, last crawled block")
+            logger.info(f"Starting from block {current_block}, last crawled block")
         else:
             current_block = web3.eth.blockNumber - num_confirmations * 2
-            print(f"Starting from block {current_block}, current block")
+            logger.info(f"Starting from block {current_block}, current block")
     else:
         current_block = start_block
         if last_crawled_block is not None:
             if start_block > last_crawled_block:
-                print(
+                logger.info(
                     f"Starting from block {start_block}, last crawled block {last_crawled_block}"
                 )
             else:
                 current_block = last_crawled_block
-                print(f"Starting from last crawled block {start_block}")
+                logger.info(f"Starting from last crawled block {start_block}")
 
     event_abis = [item for item in contract_abi if item["type"] == "event"]
 
@@ -240,7 +242,7 @@ def watch_cu_contract(
         crawler.crawl(current_block, end_block)
         if state.state:
             _add_function_call_labels(session, state.state)
-            print(f"Got  {len(state.state)} transaction calls:")
+            logger.info(f"Got  {len(state.state)} transaction calls:")
             state.flush()
 
         for event_abi in event_abis:
@@ -272,5 +274,6 @@ def watch_cu_contract(
         progress_bar.set_description(
             f"Current block {end_block + 1}, Already watching for"
         )
+        logger.info(f"Current block {end_block + 1}")
         progress_bar.update(end_block - current_block + 1)
         current_block = end_block + 1
