@@ -9,7 +9,7 @@ from web3.middleware import geth_poa_middleware
 
 from moonworm.watch import watch_contract
 from moonworm.cu_watch import watch_cu_contract
-from moonstreamdb.db import yield_db_session_ctx
+
 
 from .contracts import CU, ERC20, ERC721
 from .generator import (
@@ -100,10 +100,13 @@ def handle_watch(args: argparse.Namespace) -> None:
 
 
 def handle_watch_cu(args: argparse.Namespace) -> None:
+
     MOONSTREAM_DB_URI = os.environ.get("MOONSTREAM_DB_URI")
     if not MOONSTREAM_DB_URI:
         print("Please set MOONSTREAM_DB_URI environment variable")
         return
+
+    from moonstreamdb.db import yield_db_session_ctx
 
     if args.abi is not None:
         with open(args.abi, "r") as ifp:
