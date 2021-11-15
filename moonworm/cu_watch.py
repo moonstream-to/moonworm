@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, cast
 
 import web3
 from eth_typing.evm import ChecksumAddress
+from moonstreamdb.db import yield_db_session_ctx
 from moonstreamdb.models import PolygonLabel
 from sqlalchemy.orm import Query, Session
 from tqdm import tqdm
@@ -26,12 +27,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _get_last_crawled_block(
-    session: Session, contract_address: ChecksumAddress
-) -> Optional[int]:
+def get_session() -> Session:
+    return yield_db_session_ctx()
+
+
+def _get_last_crawled_block(contract_address: ChecksumAddress) -> Optional[int]:
     """
     Gets the last block that was crawled.
     """
+    session = get_session()
     query = (
         session.query(PolygonLabel)
         .filter(
@@ -46,13 +50,12 @@ def _get_last_crawled_block(
 
 
 def _add_function_call_labels(
-    session: Session,
     function_calls: List[ContractFunctionCall],
 ) -> None:
     """
     Adds a label to a function call.
     """
-
+    session = get_session()
     existing_function_call_labels = (
         session.query(PolygonLabel)
         .filter(
@@ -108,10 +111,12 @@ def _add_function_call_labels(
             session.rollback()
 
 
-def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
+def _add_event_labels(events: List[Dict[str, Any]]) -> None:
     """
     Adds events to database.
     """
+    session = get_session()
+
     transactions = [event["transactionHash"] for event in events]
 
     existing_event_labels = (
@@ -188,7 +193,6 @@ class MockState(FunctionCallCrawlerState):
 
 
 def watch_cu_contract(
-    session: Session,
     web3: Web3,
     contract_address: ChecksumAddress,
     contract_abi: List[Dict[str, Any]],
@@ -207,7 +211,7 @@ def watch_cu_contract(
         [web3.toChecksumAddress(contract_address)],
     )
 
-    last_crawled_block = _get_last_crawled_block(session, contract_address)
+    last_crawled_block = _get_last_crawled_block(contract_address)
     if start_block is None:
         if last_crawled_block is not None:
             current_block = last_crawled_block
@@ -228,8 +232,6 @@ def watch_cu_contract(
 
     event_abis = [item for item in contract_abi if item["type"] == "event"]
 
-    progress_bar = tqdm(unit=" blocks")
-    progress_bar.set_description(f"Current block {current_block}")
     while True:
         time.sleep(sleep_time)
         end_block = min(web3.eth.blockNumber - num_confirmations, current_block + 100)
@@ -241,7 +243,7 @@ def watch_cu_contract(
 
         crawler.crawl(current_block, end_block)
         if state.state:
-            _add_function_call_labels(session, state.state)
+            _add_function_call_labels(state.state)
             logger.info(f"Got  {len(state.state)} transaction calls:")
             state.flush()
 
@@ -269,11 +271,6 @@ def watch_cu_contract(
                 all_events.append(event)
 
             if all_events:
-                _add_event_labels(session, all_events)
-
-        progress_bar.set_description(
-            f"Current block {end_block + 1}, Already watching for"
-        )
+                _add_event_labels(all_events)
         logger.info(f"Current block {end_block + 1}")
-        progress_bar.update(end_block - current_block + 1)
         current_block = end_block + 1

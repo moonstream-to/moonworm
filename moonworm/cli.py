@@ -105,8 +105,6 @@ def handle_watch_cu(args: argparse.Namespace) -> None:
         print("Please set MOONSTREAM_DB_URI environment variable")
         return
 
-    from moonstreamdb.db import yield_db_session_ctx
-
     if args.abi is not None:
         with open(args.abi, "r") as ifp:
             contract_abi = json.load(ifp)
@@ -116,15 +114,13 @@ def handle_watch_cu(args: argparse.Namespace) -> None:
     web3 = Web3(Web3.HTTPProvider(args.web3))
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-    with yield_db_session_ctx() as session:
-        watch_cu_contract(
-            session,
-            web3,
-            web3.toChecksumAddress(args.contract),
-            contract_abi,
-            args.confirmations,
-            start_block=args.deployment_block,
-        )
+    watch_cu_contract(
+        web3,
+        web3.toChecksumAddress(args.contract),
+        contract_abi,
+        args.confirmations,
+        start_block=args.deployment_block,
+    )
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
