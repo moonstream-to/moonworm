@@ -7,6 +7,7 @@ from shutil import copyfile
 from web3.main import Web3
 from web3.middleware import geth_poa_middleware
 
+from moonworm.cu_watch import watch_cu_contract
 from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721
@@ -97,6 +98,35 @@ def handle_watch(args: argparse.Namespace) -> None:
     )
 
 
+def handle_watch_cu(args: argparse.Namespace) -> None:
+
+    MOONSTREAM_DB_URI = os.environ.get("MOONSTREAM_DB_URI")
+    if not MOONSTREAM_DB_URI:
+        print("Please set MOONSTREAM_DB_URI environment variable")
+        return
+
+    from moonstreamdb.db import yield_db_session_ctx
+
+    if args.abi is not None:
+        with open(args.abi, "r") as ifp:
+            contract_abi = json.load(ifp)
+    else:
+        contract_abi = CU.abi()
+
+    web3 = Web3(Web3.HTTPProvider(args.web3))
+    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+    with yield_db_session_ctx() as session:
+        watch_cu_contract(
+            session,
+            web3,
+            web3.toChecksumAddress(args.contract),
+            contract_abi,
+            args.confirmations,
+            start_block=args.deployment_block,
+        )
+
+
 def generate_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Moonworm: Manage your smart contract")
 
@@ -139,6 +169,46 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     )
 
     watch_parser.set_defaults(func=handle_watch)
+
+    watch_cu_parser = subcommands.add_parser(
+        "watch-cu", help="Watch a Crypto Unicorns contract"
+    )
+    watch_cu_parser.add_argument(
+        "-i",
+        "--abi",
+        default=None,
+        help="ABI file path, default is abi in  fixtures/abis/CU.json",
+    )
+
+    watch_cu_parser.add_argument(
+        "-c",
+        "--contract",
+        required=True,
+        help="Contract address",
+    )
+
+    watch_cu_parser.add_argument(
+        "-w",
+        "--web3",
+        required=True,
+        help="Web3 provider",
+    )
+
+    watch_cu_parser.add_argument(
+        "--confirmations",
+        default=10,
+        type=int,
+        help="Number of confirmations to wait for. Default=12",
+    )
+
+    watch_cu_parser.add_argument(
+        "--deployment-block",
+        "-d",
+        type=int,
+        help="Block number of the deployment",
+    )
+
+    watch_cu_parser.set_defaults(func=handle_watch_cu)
 
     generate_parser = subcommands.add_parser(
         "generate", description="Moonworm code generator"
