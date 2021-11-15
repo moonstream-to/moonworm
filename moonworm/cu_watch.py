@@ -74,8 +74,11 @@ def _add_function_call_labels(
             )
             session.commit()
     except Exception as e:
-        print(f"Failed!!!\n{e}")
-        session.rollback()
+        try:
+            session.commit()
+        except:
+            print(f"Failed!!!\n{e}")
+            session.rollback()
 
     for function_call in function_calls:
         label = PolygonLabel(
@@ -98,8 +101,11 @@ def _add_function_call_labels(
         print("Committing tx_call labels to database...")
         session.commit()
     except Exception as e:
-        print(f"Failed!!!\n{e}")
-        session.rollback()
+        try:
+            session.commit()
+        except:
+            print(f"Failed!!!\n{e}")
+            session.rollback()
 
 
 def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
@@ -127,8 +133,11 @@ def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
             print(f"Deleting {len(existing_event_labels)} existing event labels")
             session.commit()
     except Exception as e:
-        print(f"Failed!!!\n{e}")
-        session.rollback()
+        try:
+            session.commit()
+        except:
+            print(f"Failed!!!\n{e}")
+            session.rollback()
 
     for event in events:
         label = PolygonLabel(
@@ -148,8 +157,11 @@ def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
     try:
         session.commit()
     except Exception as e:
-        print(f"Failed!!!\n{e}")
-        session.rollback()
+        try:
+            session.commit()
+        except:
+            print(f"Failed!!!\n{e}")
+            session.rollback()
 
 
 class MockState(FunctionCallCrawlerState):
