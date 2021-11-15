@@ -27,27 +27,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_session() -> Session:
-    with yield_db_session_ctx() as session:
-        return session
-
-
 def _get_last_crawled_block(contract_address: ChecksumAddress) -> Optional[int]:
     """
     Gets the last block that was crawled.
     """
-    session = get_session()
-    query = (
-        session.query(PolygonLabel)
-        .filter(
-            PolygonLabel.label == "moonworm",
-            PolygonLabel.address == contract_address,
+    with yield_db_session_ctx() as session:
+        query = (
+            session.query(PolygonLabel)
+            .filter(
+                PolygonLabel.label == "moonworm",
+                PolygonLabel.address == contract_address,
+            )
+            .order_by(PolygonLabel.block_number.desc())
         )
-        .order_by(PolygonLabel.block_number.desc())
-    )
-    if query.count():
-        return query.first().block_number
-    return None
+        if query.count():
+            return query.first().block_number
+        return None
 
 
 def _add_function_call_labels(
@@ -56,118 +51,120 @@ def _add_function_call_labels(
     """
     Adds a label to a function call.
     """
-    session = get_session()
-    existing_function_call_labels = (
-        session.query(PolygonLabel)
-        .filter(
-            PolygonLabel.label == "moonworm",
-            PolygonLabel.log_index == None,
-            PolygonLabel.transaction_hash.in_(
-                [call.transaction_hash for call in function_calls]
-            ),
-        )
-        .all()
-    )
-    # deletin existing labels
-    for label in existing_function_call_labels:
-        session.delete(label)
-
-    try:
-        if existing_function_call_labels:
-            logger.info(
-                f"Deleting {len(existing_function_call_labels)} existing event labels"
+    with yield_db_session_ctx() as session:
+        existing_function_call_labels = (
+            session.query(PolygonLabel)
+            .filter(
+                PolygonLabel.label == "moonworm",
+                PolygonLabel.log_index == None,
+                PolygonLabel.transaction_hash.in_(
+                    [call.transaction_hash for call in function_calls]
+                ),
             )
-            session.commit()
-    except Exception as e:
-        try:
-            session.commit()
-        except:
-            logger.error(f"Failed!!!\n{e}")
-            session.rollback()
-
-    for function_call in function_calls:
-        label = PolygonLabel(
-            label="moonworm",
-            label_data={
-                "type": "tx_call",
-                "name": function_call.function_name,
-                "caller": function_call.caller_address,
-                "args": function_call.function_args,
-                "status": function_call.status,
-                "gasUsed": function_call.gas_used,
-            },
-            address=function_call.contract_address,
-            block_number=function_call.block_number,
-            transaction_hash=function_call.transaction_hash,
-            block_timestamp=function_call.block_timestamp,
+            .all()
         )
-        session.add(label)
-    try:
-        session.commit()
-    except Exception as e:
+        # deletin existing labels
+        for label in existing_function_call_labels:
+            session.delete(label)
+
+        try:
+            if existing_function_call_labels:
+                logger.info(
+                    f"Deleting {len(existing_function_call_labels)} existing tx labels"
+                )
+                session.commit()
+        except Exception as e:
+            try:
+                session.commit()
+            except:
+                logger.error(f"Failed!!!\n{e}")
+                session.rollback()
+
+        for function_call in function_calls:
+            label = PolygonLabel(
+                label="moonworm",
+                label_data={
+                    "type": "tx_call",
+                    "name": function_call.function_name,
+                    "caller": function_call.caller_address,
+                    "args": function_call.function_args,
+                    "status": function_call.status,
+                    "gasUsed": function_call.gas_used,
+                },
+                address=function_call.contract_address,
+                block_number=function_call.block_number,
+                transaction_hash=function_call.transaction_hash,
+                block_timestamp=function_call.block_timestamp,
+            )
+            session.add(label)
         try:
             session.commit()
-        except:
-            logger.error(f"Failed!!!\n{e}")
-            session.rollback()
+        except Exception as e:
+            try:
+                session.commit()
+            except:
+                logger.error(f"Failed!!!\n{e}")
+                session.rollback()
 
 
 def _add_event_labels(events: List[Dict[str, Any]]) -> None:
     """
     Adds events to database.
     """
-    session = get_session()
+    with yield_db_session_ctx() as session:
 
-    transactions = [event["transactionHash"] for event in events]
+        transactions = [event["transactionHash"] for event in events]
 
-    existing_event_labels = (
-        session.query(PolygonLabel)
-        .filter(
-            PolygonLabel.label == "moonworm",
-            PolygonLabel.transaction_hash.in_(transactions),
-            PolygonLabel.log_index != None,
+        existing_event_labels = (
+            session.query(PolygonLabel)
+            .filter(
+                PolygonLabel.label == "moonworm",
+                PolygonLabel.transaction_hash.in_(transactions),
+                PolygonLabel.log_index != None,
+            )
+            .all()
         )
-        .all()
-    )
 
-    # deletin existing labels
-    for label in existing_event_labels:
-        session.delete(label)
+        # deletin existing labels
+        for label in existing_event_labels:
+            session.delete(label)
 
-    try:
-        if existing_event_labels:
-            logger.error(f"Deleting {len(existing_event_labels)} existing event labels")
-            session.commit()
-    except Exception as e:
+        try:
+            if existing_event_labels:
+                logger.error(
+                    f"Deleting {len(existing_event_labels)} existing event labels"
+                )
+                session.commit()
+        except Exception as e:
+            try:
+                session.commit()
+            except:
+                logger.error(f"Failed!!!\n{e}")
+                session.rollback()
+
+        for event in events:
+            label = PolygonLabel(
+                label="moonworm",
+                label_data={
+                    "type": "event",
+                    "name": event["event"],
+                    "args": event["args"],
+                },
+                address=event["address"],
+                block_number=event["blockNumber"],
+                transaction_hash=event["transactionHash"],
+                block_timestamp=event["blockTimestamp"],
+                log_index=event["logIndex"],
+            )
+            session.add(label)
         try:
             session.commit()
-        except:
-            logger.error(f"Failed!!!\n{e}")
-            session.rollback()
-
-    for event in events:
-        label = PolygonLabel(
-            label="moonworm",
-            label_data={
-                "type": "event",
-                "name": event["event"],
-                "args": event["args"],
-            },
-            address=event["address"],
-            block_number=event["blockNumber"],
-            transaction_hash=event["transactionHash"],
-            block_timestamp=event["blockTimestamp"],
-            log_index=event["logIndex"],
-        )
-        session.add(label)
-    try:
-        session.commit()
-    except Exception as e:
-        try:
-            session.commit()
-        except:
-            logger.error(f"Failed!!!\n{e}")
-            session.rollback()
+        except Exception as e:
+            try:
+                session.commit()
+            except:
+                logger.error(f"Failed!!!\n{e}")
+                session.rollback()
 
 
 class MockState(FunctionCallCrawlerState):
