@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, cast
 
 import web3
 from eth_typing.evm import ChecksumAddress
-from moonstreamdb.db import yield_db_session_ctx
+from moonstreamdb.db import SessionLocal
 from moonstreamdb.models import PolygonLabel
 from sqlalchemy.orm import Query, Session
 from tqdm import tqdm
@@ -31,7 +31,9 @@ def _get_last_crawled_block(contract_address: ChecksumAddress) -> Optional[int]:
     """
     Gets the last block that was crawled.
     """
-    with yield_db_session_ctx() as session:
+    session = SessionLocal()
+    result = None
+    try:
         query = (
             session.query(PolygonLabel)
             .filter(
@@ -41,8 +43,10 @@ def _get_last_crawled_block(contract_address: ChecksumAddress) -> Optional[int]:
             .order_by(PolygonLabel.block_number.desc())
         )
         if query.count():
-            return query.first().block_number
-        return None
+            result = query.first().block_number
+    finally:
+        session.close()
+    return result
 
 
 def _add_function_call_labels(
@@ -51,7 +55,8 @@ def _add_function_call_labels(
     """
     Adds a label to a function call.
     """
-    with yield_db_session_ctx() as session:
+    session = SessionLocal()
+    try:
         existing_function_call_labels = (
             session.query(PolygonLabel)
             .filter(
@@ -105,13 +110,17 @@ def _add_function_call_labels(
             except:
                 logger.error(f"Failed!!!\n{e}")
                 session.rollback()
+    finally:
+        session.close()
 
 
 def _add_event_labels(events: List[Dict[str, Any]]) -> None:
     """
     Adds events to database.
     """
-    with yield_db_session_ctx() as session:
+    session = SessionLocal()
+
+    try:
 
         transactions = [event["transactionHash"] for event in events]
 
@@ -165,6 +174,8 @@ def _add_event_labels(events: List[Dict[str, Any]]) -> None:
             except:
                 logger.error(f"Failed!!!\n{e}")
                 session.rollback()
+    finally:
+        session.close()
 
 
 class MockState(FunctionCallCrawlerState):
