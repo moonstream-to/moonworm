@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 def get_session() -> Session:
-    return yield_db_session_ctx()
+    with yield_db_session_ctx() as session:
+        return session
 
 
 def _get_last_crawled_block(contract_address: ChecksumAddress) -> Optional[int]:
@@ -241,12 +242,14 @@ def watch_cu_contract(
 
         sleep_time /= 2
 
+        logger.info("Getting txs")
         crawler.crawl(current_block, end_block)
         if state.state:
             _add_function_call_labels(state.state)
             logger.info(f"Got  {len(state.state)} transaction calls:")
             state.flush()
 
+        logger.info("Getting events")
         for event_abi in event_abis:
             raw_events = _fetch_events_chunk(
                 web3,
