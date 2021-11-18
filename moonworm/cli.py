@@ -7,7 +7,7 @@ from shutil import copyfile
 from web3.main import Web3
 from web3.middleware import geth_poa_middleware
 
-from moonworm.cu_watch import watch_cu_contract
+
 from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721
@@ -99,7 +99,7 @@ def handle_watch(args: argparse.Namespace) -> None:
 
 
 def handle_watch_cu(args: argparse.Namespace) -> None:
-
+    from moonworm.cu_watch import watch_cu_contract
     MOONSTREAM_DB_URI = os.environ.get("MOONSTREAM_DB_URI")
     if not MOONSTREAM_DB_URI:
         print("Please set MOONSTREAM_DB_URI environment variable")
