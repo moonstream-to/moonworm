@@ -73,7 +73,7 @@ def _add_function_call_labels(
     try:
         if existing_function_call_labels:
             logger.info(
-                f"Deleting {len(existing_function_call_labels)} existing event labels"
+                f"Deleting {len(existing_function_call_labels)} existing tx labels"
             )
             session.commit()
     except Exception as e:
@@ -197,10 +197,14 @@ def watch_cu_contract(
     num_confirmations: int = 10,
     sleep_time: float = 1,
     start_block: Optional[int] = None,
+    force_start: bool = False,
 ) -> None:
     """
     Watches a contract for events and calls.
     """
+    if force_start and start_block is None:
+        raise ValueError("start_block must be specified if force_start is True")
+
     with yield_db_session_ctx() as session:
         state = MockState()
         crawler = FunctionCallCrawler(
@@ -220,7 +224,7 @@ def watch_cu_contract(
                 logger.info(f"Starting from block {current_block}, current block")
         else:
             current_block = start_block
-            if last_crawled_block is not None:
+            if not force_start and last_crawled_block is not None:
                 if start_block > last_crawled_block:
                     logger.info(
                         f"Starting from block {start_block}, last crawled block {last_crawled_block}"

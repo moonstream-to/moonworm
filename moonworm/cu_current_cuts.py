@@ -58,7 +58,7 @@ def get_all_diamond_cuts(session: Session):
     labels = (
         session.query(PolygonLabel.label_data)
         .filter(PolygonLabel.label == "moonworm")
-        .filter(PolygonLabel.address == ADDRESS)
+        .filter(PolygonLabel.address == MUMBAI_ADDRESS)
         .filter(PolygonLabel.label_data["name"].astext == "diamondCut")
         .filter(PolygonLabel.label_data["status"].astext == "1")
         .order_by(PolygonLabel.block_number.asc())
