@@ -1,11 +1,13 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from re import L
-from moonstreamdb.models import PolygonLabel
+
 from moonstreamdb.db import yield_db_session_ctx
+from moonstreamdb.models import PolygonLabel
 from sqlalchemy.orm.session import Session
-from .contracts import CU
 from web3 import Web3
+
+from .contracts import CU
 
 ADDRESS = "0xdC0479CC5BbA033B3e7De9F178607150B3AbCe1f"
 MUMBAI_ADDRESS = "0xA993c4759B731f650dfA011765a6aedaC91a4a88"
