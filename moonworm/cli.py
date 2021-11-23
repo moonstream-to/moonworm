@@ -7,7 +7,6 @@ from shutil import copyfile
 from web3.main import Web3
 from web3.middleware import geth_poa_middleware
 
-
 from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721
@@ -100,6 +99,7 @@ def handle_watch(args: argparse.Namespace) -> None:
 
 def handle_watch_cu(args: argparse.Namespace) -> None:
     from moonworm.cu_watch import watch_cu_contract
+
     MOONSTREAM_DB_URI = os.environ.get("MOONSTREAM_DB_URI")
     if not MOONSTREAM_DB_URI:
         print("Please set MOONSTREAM_DB_URI environment variable")
@@ -120,6 +120,7 @@ def handle_watch_cu(args: argparse.Namespace) -> None:
         contract_abi,
         args.confirmations,
         start_block=args.deployment_block,
+        force_start=args.force,
     )
 
 
@@ -175,7 +176,12 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         default=None,
         help="ABI file path, default is abi in  fixtures/abis/CU.json",
     )
-
+    watch_cu_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force start from given block",
+    )
     watch_cu_parser.add_argument(
         "-c",
         "--contract",
