@@ -121,10 +121,10 @@ def handle_watch(args: argparse.Namespace) -> None:
                 state_provider.clear_db_session()
 
     else:
-        state_provider = Web3StateProvider(web3)
+
         watch_contract(
             web3=web3,
-            state_provider=state_provider,
+            state_provider=Web3StateProvider(web3),
             contract_address=web3.toChecksumAddress(args.contract),
             contract_abi=contract_abi,
             num_confirmations=args.confirmations,

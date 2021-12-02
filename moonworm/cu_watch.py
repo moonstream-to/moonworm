@@ -20,6 +20,7 @@ from moonworm.crawler.moonstream_ethereum_state_provider import (
 from moonworm.crawler.networks import Network
 
 from .contracts import CU, ERC721
+from .crawler.ethereum_state_provider import EthereumStateProvider
 from .crawler.function_call_crawler import (
     ContractFunctionCall,
     FunctionCallCrawler,
@@ -222,12 +223,14 @@ def watch_cu_contract(
 
     with yield_db_session_ctx() as session:
         function_call_state = MockState()
-        web3_state = Web3StateProvider(web3)
-        eth_state_provider = web3_state
+
+        eth_state_provider: Optional[EthereumStateProvider] = None
         if use_moonstream_web3_provider:
             eth_state_provider = MoonstreamEthereumStateProvider(
-                web3, network=Network.polygon, session=session
+                web3, network=Network.polygon, db_session=session
             )
+        else:
+            eth_state_provider = Web3StateProvider(web3)
 
         crawler = FunctionCallCrawler(
             function_call_state,
