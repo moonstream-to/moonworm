@@ -3,6 +3,8 @@ import logging
 import os
 from typing import Any, Dict, List, Sequence, Union, cast
 
+import black
+import black.mode
 import libcst as cst
 
 from ..version import MOONWORM_VERSION
@@ -24,6 +26,11 @@ try:
 except Exception as e:
     logging.warn(f"WARNING: Could not load cli template from {CLI_TEMPLATE_PATH}:")
     logging.warn(e)
+
+
+def format_code(code: str) -> str:
+    formatted_code = black.format_str(code, mode=black.mode.Mode())
+    return formatted_code
 
 
 def make_annotation(types: list, optional: bool = False):
@@ -323,7 +330,7 @@ def generate_argument_parser_function(abi: List[Dict[str, Any]]) -> cst.Function
 
 
 def generate_contract_interface_content(
-    abi: List[Dict[str, Any]], abi_file_name: str
+    abi: List[Dict[str, Any]], abi_file_name: str, format: bool = True
 ) -> str:
     contract_body = cst.Module(body=[generate_contract_class(abi)]).code
 
@@ -332,11 +339,16 @@ def generate_contract_interface_content(
         moonworm_version=MOONWORM_VERSION,
         abi_file_name=abi_file_name,
     )
+
+    if format:
+        content = format_code(content)
+
     return content
 
 
-def generate_contract_cli_content(abi: List[Dict[str, Any]], abi_file_name: str) -> str:
-
+def generate_contract_cli_content(
+    abi: List[Dict[str, Any]], abi_file_name: str, format: bool = True
+) -> str:
     cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
 
     content = CLI_FILE_TEMPLATE.format(
@@ -344,5 +356,8 @@ def generate_contract_cli_content(abi: List[Dict[str, Any]], abi_file_name: str)
         moonworm_version=MOONWORM_VERSION,
         abi_file_name=abi_file_name,
     )
+
+    if format:
+        content = format_code(content)
 
     return content

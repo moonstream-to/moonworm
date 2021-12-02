@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import libcst as cst
 
 from ..version import MOONWORM_VERSION
-from .basic import make_annotation, normalize_abi_name, python_type
+from .basic import format_code, make_annotation, normalize_abi_name, python_type
 
 BROWNIE_INTERFACE_TEMPLATE_PATH = os.path.join(
     os.path.dirname(__file__), "brownie_contract.py.template"
@@ -158,7 +158,9 @@ def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.Funct
     )
 
 
-def generate_brownie_interface(abi: List[Dict[str, Any]], contract_name: str) -> str:
+def generate_brownie_interface(
+    abi: List[Dict[str, Any]], contract_name: str, format: bool = True
+) -> str:
     contract_body = cst.Module(
         body=[generate_brownie_contract_class(abi, contract_name)]
     ).code
@@ -167,4 +169,8 @@ def generate_brownie_interface(abi: List[Dict[str, Any]], contract_name: str) ->
         contract_body=contract_body,
         moonworm_version=MOONWORM_VERSION,
     )
+
+    if format:
+        content = format_code(content)
+
     return content
