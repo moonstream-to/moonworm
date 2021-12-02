@@ -7,9 +7,11 @@ from shutil import copyfile
 from web3.main import Web3
 from web3.middleware import geth_poa_middleware
 
+from moonworm.crawler.ethereum_state_provider import Web3StateProvider
 from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721
+from .crawler.networks import Network
 from .generator import (
     generate_contract_cli_content,
     generate_contract_interface_content,
@@ -92,9 +94,42 @@ def handle_watch(args: argparse.Namespace) -> None:
     web3 = Web3(Web3.HTTPProvider(args.web3))
     if args.poa:
         web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-    watch_contract(
-        web3, web3.toChecksumAddress(args.contract), contract_abi, args.confirmations
-    )
+    if args.db:
+        if args.network is None:
+            raise ValueError("Please specify --network")
+        network = Network.__members__[args.network]
+        from moonstreamdb.db import yield_db_session_ctx
+
+        from .crawler.moonstream_ethereum_state_provider import (
+            MoonstreamEthereumStateProvider,
+        )
+
+        state_provider = MoonstreamEthereumStateProvider(web3, network)
+
+        with yield_db_session_ctx() as db_session:
+            try:
+                state_provider.set_db_session(db_session)
+                watch_contract(
+                    web3=web3,
+                    state_provider=state_provider,
+                    contract_address=web3.toChecksumAddress(args.contract),
+                    contract_abi=contract_abi,
+                    num_confirmations=args.confirmations,
+                    start_block=args.start,
+                )
+            finally:
+                state_provider.clear_db_session()
+
+    else:
+
+        watch_contract(
+            web3=web3,
+            state_provider=Web3StateProvider(web3),
+            contract_address=web3.toChecksumAddress(args.contract),
+            contract_abi=contract_abi,
+            num_confirmations=args.confirmations,
+            start_block=args.start,
+        )
 
 
 def handle_watch_cu(args: argparse.Namespace) -> None:
@@ -150,6 +185,27 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         "--web3",
         required=True,
         help="Web3 provider",
+    )
+
+    watch_parser.add_argument(
+        "--db",
+        action="store_true",
+        help="Use Moonstream database specified by 'MOONSTREAM_DB_URI' to get blocks/transactions. If set, need also provide --network",
+    )
+
+    watch_parser.add_argument(
+        "--network",
+        choices=Network.__members__,
+        default=None,
+        help="Network name that represents models from db. If --db is set, required",
+    )
+
+    watch_parser.add_argument(
+        "--start",
+        "-s",
+        type=int,
+        default=None,
+        help="Block number to start watching from",
     )
 
     watch_parser.add_argument(

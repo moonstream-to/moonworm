@@ -1,8 +1,9 @@
 # Used example scanner from web3 documentation : https://web3py.readthedocs.io/en/stable/examples.html#eth-getlogs-limitations
 import datetime
+import json
 import logging
 import time
-from typing import Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 from eth_abi.codec import ABICodec
 from eth_typing.evm import ChecksumAddress
@@ -13,6 +14,7 @@ from web3.datastructures import AttributeDict
 from web3.exceptions import BlockNotFound
 from web3.types import ABIEvent, FilterParams
 
+from .function_call_crawler import utfy_dict
 from .state import EventScannerState
 
 logging.basicConfig(level=logging.INFO)
@@ -67,13 +69,20 @@ def _fetch_events_chunk(
     from_block: int,
     to_block: int,
     addresses: Optional[List[ChecksumAddress]] = None,
-) -> Iterable:
+    on_decode_error: Optional[Callable[[Exception], None]] = None,
+) -> List[Any]:
     """Get events using eth_getLogs API.
 
-    This method is detached from any contract instance.
+    Event structure:
+    {
+        "event": Event name,
+        "args": dictionary of event arguments,
+        "address": contract address,
+        "blockNumber": block number,
+        "transactionHash": transaction hash,
+        "logIndex": log index
+    }
 
-    This is a stateless method, as opposed to createFilter.
-    It can be safely called against nodes which do not provide `eth_newFilter` API, like Infura.
     """
 
     if from_block is None:
@@ -86,14 +95,7 @@ def _fetch_events_chunk(
     # More information here https://eth-abi.readthedocs.io/en/latest/index.html
     codec: ABICodec = web3.codec
 
-    # Here we need to poke a bit into Web3 internals, as this
-    # functionality is not exposed by default.
-    # Construct JSON-RPC raw filter presentation based on human readable Python descriptions
-    # Namely, convert event names to their keccak signatures
-    # More information here:
-    # https://github.com/ethereum/web3.py/blob/e176ce0793dafdd0573acc8d4b76425b6eb604ca/web3/_utils/filters.py#L71
-    # TODO(yhtiyar): Add argument filters and contract address filters
-    data_filter_set, event_filter_params = construct_event_filter_params(
+    _, event_filter_params = construct_event_filter_params(
         event_abi,
         codec,
         fromBlock=from_block,
@@ -107,15 +109,20 @@ def _fetch_events_chunk(
     # Convert raw binary data to Python proxy objects as described by ABI
     all_events = []
     for log in logs:
-        # Convert raw JSON-RPC log result to human readable event by using ABI data
-        # More information how processLog works here
-        # https://github.com/ethereum/web3.py/blob/fbaf1ad11b0c7fac09ba34baff2c256cffe0a148/web3/_utils/events.py#L200
         try:
-            evt = get_event_data(codec, event_abi, log)
-            # Note: This was originally yield,
-            # but deferring the timeout exception caused the throttle logic not to work
-            all_events.append(evt)
-        except:
+            raw_event = get_event_data(codec, event_abi, log)
+            event = {
+                "event": raw_event["event"],
+                "args": json.loads(Web3.toJSON(utfy_dict(dict(raw_event["args"])))),
+                "address": raw_event["address"],
+                "blockNumber": raw_event["blockNumber"],
+                "transactionHash": raw_event["transactionHash"].hex(),
+                "logIndex": raw_event["logIndex"],
+            }
+            all_events.append(event)
+        except Exception as e:
+            if on_decode_error:
+                on_decode_error(e)
             continue
     return all_events
 

@@ -7,6 +7,8 @@ from eth_typing.evm import ChecksumAddress
 from tqdm import tqdm
 from web3 import Web3
 
+from moonworm.crawler.ethereum_state_provider import EthereumStateProvider
+
 from .contracts import CU, ERC721
 from .crawler.function_call_crawler import (
     ContractFunctionCall,
@@ -40,8 +42,10 @@ class MockState(FunctionCallCrawlerState):
         self.state = []
 
 
+# TODO(yhtiyar), use state_provider.get_last_block
 def watch_contract(
     web3: Web3,
+    state_provider: EthereumStateProvider,
     contract_address: ChecksumAddress,
     contract_abi: List[Dict[str, Any]],
     num_confirmations: int = 10,
@@ -54,7 +58,7 @@ def watch_contract(
     state = MockState()
     crawler = FunctionCallCrawler(
         state,
-        Web3StateProvider(web3),
+        state_provider,
         contract_abi,
         [web3.toChecksumAddress(contract_address)],
     )
@@ -70,14 +74,14 @@ def watch_contract(
     progress_bar.set_description(f"Current block {current_block}")
     while True:
         time.sleep(sleep_time)
-        end_block = web3.eth.blockNumber - num_confirmations
+        end_block = min(web3.eth.blockNumber - num_confirmations, current_block + 100)
         if end_block < current_block:
             sleep_time *= 2
             continue
 
         sleep_time /= 2
 
-        crawler.crawl(current_block, end_block)
+        # crawler.crawl(current_block, end_block)
         if state.state:
             print("Got transaction calls:")
             for call in state.state:
