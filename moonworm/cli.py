@@ -13,6 +13,7 @@ from moonworm.watch import watch_contract
 from .contracts import CU, ERC20, ERC721
 from .crawler.networks import Network
 from .generator import (
+    generate_brownie_interface,
     generate_contract_cli_content,
     generate_contract_interface_content,
 )
@@ -78,6 +79,27 @@ def handle_generate(args: argparse.Namespace) -> None:
         cli_name = args.name + "cli.py"
         write_file(cli_content, os.path.join(args.outdir, cli_name))
     print(f"Files are successfully generated to:{args.outdir}")
+
+
+def handle_brownie_generate(args: argparse.Namespace):
+
+    Path(args.outdir).mkdir(exist_ok=True)
+
+    project_directory = args.project
+    build_directory = os.path.join(project_directory, "build", "contracts")
+
+    build_file_path = os.path.join(build_directory, f"{args.name}.json")
+    if not os.path.isfile(build_file_path):
+        raise IOError(
+            f"File does not exist: {build_file_path}. Maybe you have to compile the smart contracts?"
+        )
+
+    with open(build_file_path, "r") as ifp:
+        build = json.load(ifp)
+
+    abi = build["abi"]
+    interface = generate_brownie_interface(abi, args.name)
+    write_file(interface, os.path.join(args.outdir, args.name + ".py"))
 
 
 def handle_watch(args: argparse.Namespace) -> None:
@@ -267,6 +289,29 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     )
 
     watch_cu_parser.set_defaults(func=handle_watch_cu)
+
+    generate_brownie_parser = subcommands.add_parser(
+        "generate-brownie", description="Moonworm code generator for brownie projects"
+    )
+    generate_brownie_parser.add_argument(
+        "-o",
+        "--outdir",
+        required=True,
+        help=f"Output directory where files will be generated.",
+    )
+    generate_brownie_parser.add_argument(
+        "--name",
+        "-n",
+        required=True,
+        help="Prefix name for generated files",
+    )
+    generate_brownie_parser.add_argument(
+        "-p",
+        "--project",
+        required=True,
+        help=f"Path to brownie project directory",
+    )
+    generate_brownie_parser.set_defaults(func=handle_brownie_generate)
 
     generate_parser = subcommands.add_parser(
         "generate", description="Moonworm code generator"
