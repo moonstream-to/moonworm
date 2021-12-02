@@ -14,12 +14,18 @@ from sqlalchemy.orm import Query, Session
 from tqdm import tqdm
 from web3 import Web3
 
+from moonworm.crawler.moonstream_ethereum_state_provider import (
+    MoonstreamEthereumStateProvider,
+)
+from moonworm.crawler.networks import Network
+
 from .contracts import CU, ERC721
 from .crawler.function_call_crawler import (
     ContractFunctionCall,
     FunctionCallCrawler,
     FunctionCallCrawlerState,
     Web3StateProvider,
+    utfy_dict,
 )
 from .crawler.log_scanner import _fetch_events_chunk
 
@@ -50,6 +56,7 @@ def _get_last_crawled_block(
 def _add_function_call_labels(
     session: Session,
     function_calls: List[ContractFunctionCall],
+    address: ChecksumAddress,
 ) -> None:
     """
     Adds a label to a function call.
@@ -60,6 +67,7 @@ def _add_function_call_labels(
         .filter(
             PolygonLabel.label == "moonworm",
             PolygonLabel.log_index == None,
+            PolygonLabel.address == address,
             PolygonLabel.transaction_hash.in_(
                 [call.transaction_hash for call in function_calls]
             ),
@@ -73,7 +81,7 @@ def _add_function_call_labels(
     try:
         if existing_function_call_labels:
             logger.info(
-                f"Deleting {len(existing_function_call_labels)} existing tx labels"
+                f"Deleting {len(existing_function_call_labels)} existing tx labels:\n{existing_function_call_labels}"
             )
             session.commit()
     except Exception as e:
@@ -110,17 +118,21 @@ def _add_function_call_labels(
             session.rollback()
 
 
-def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
+def _add_event_labels(
+    session: Session, events: List[Dict[str, Any]], address: ChecksumAddress
+) -> None:
     """
     Adds events to database.
     """
 
     transactions = [event["transactionHash"] for event in events]
-
+    for ev in events:
+        print(ev)
     existing_event_labels = (
         session.query(PolygonLabel)
         .filter(
             PolygonLabel.label == "moonworm",
+            PolygonLabel.address == address,
             PolygonLabel.transaction_hash.in_(transactions),
             PolygonLabel.log_index != None,
         )
@@ -133,7 +145,9 @@ def _add_event_labels(session: Session, events: List[Dict[str, Any]]) -> None:
 
     try:
         if existing_event_labels:
-            logger.error(f"Deleting {len(existing_event_labels)} existing event labels")
+            logger.error(
+                f"Deleting {len(existing_event_labels)} existing event labels:\n{existing_event_labels}"
+            )
             session.commit()
     except Exception as e:
         try:
@@ -198,6 +212,7 @@ def watch_cu_contract(
     sleep_time: float = 1,
     start_block: Optional[int] = None,
     force_start: bool = False,
+    use_moonstream_web3_provider: bool = False,
 ) -> None:
     """
     Watches a contract for events and calls.
@@ -206,10 +221,17 @@ def watch_cu_contract(
         raise ValueError("start_block must be specified if force_start is True")
 
     with yield_db_session_ctx() as session:
-        state = MockState()
+        function_call_state = MockState()
+        web3_state = Web3StateProvider(web3)
+        eth_state_provider = web3_state
+        if use_moonstream_web3_provider:
+            eth_state_provider = MoonstreamEthereumStateProvider(
+                web3, network=Network.polygon, session=session
+            )
+
         crawler = FunctionCallCrawler(
-            state,
-            Web3StateProvider(web3),
+            function_call_state,
+            eth_state_provider,
             contract_abi,
             [web3.toChecksumAddress(contract_address)],
         )
@@ -231,16 +253,14 @@ def watch_cu_contract(
                     )
                 else:
                     current_block = last_crawled_block
-                    logger.info(f"Starting from last crawled block {start_block}")
+                    logger.info(f"Starting from last crawled block {current_block}")
 
         event_abis = [item for item in contract_abi if item["type"] == "event"]
 
         while True:
             session.query(PolygonLabel).limit(1).one()
             time.sleep(sleep_time)
-            end_block = min(
-                web3.eth.blockNumber - num_confirmations, current_block + 100
-            )
+            end_block = min(web3.eth.blockNumber - num_confirmations, current_block + 5)
             if end_block < current_block:
                 sleep_time *= 2
                 continue
@@ -249,12 +269,15 @@ def watch_cu_contract(
 
             logger.info("Getting txs")
             crawler.crawl(current_block, end_block)
-            if state.state:
-                _add_function_call_labels(session, state.state)
-                logger.info(f"Got  {len(state.state)} transaction calls:")
-                state.flush()
+            if function_call_state.state:
+                _add_function_call_labels(
+                    session, function_call_state.state, contract_address
+                )
+                logger.info(f"Got  {len(function_call_state.state)} transaction calls:")
+                function_call_state.flush()
 
-            logger.info("Getting")
+            logger.info("Getting events")
+            all_events = []
             for event_abi in event_abis:
                 raw_events = _fetch_events_chunk(
                     web3,
@@ -263,11 +286,14 @@ def watch_cu_contract(
                     end_block,
                     [contract_address],
                 )
-                all_events = []
+
                 for raw_event in raw_events:
+
                     event = {
                         "event": raw_event["event"],
-                        "args": json.loads(Web3.toJSON(raw_event["args"])),
+                        "args": json.loads(
+                            Web3.toJSON(utfy_dict(dict(raw_event["args"])))
+                        ),
                         "address": raw_event["address"],
                         "blockNumber": raw_event["blockNumber"],
                         "transactionHash": raw_event["transactionHash"].hex(),
@@ -278,7 +304,8 @@ def watch_cu_contract(
                     }
                     all_events.append(event)
 
-                if all_events:
-                    _add_event_labels(session, all_events)
+            if all_events:
+                print(f"Got {len(all_events)} events:")
+                _add_event_labels(session, all_events, contract_address)
             logger.info(f"Current block {end_block + 1}")
             current_block = end_block + 1
