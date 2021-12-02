@@ -14,8 +14,8 @@ from web3.datastructures import AttributeDict
 from web3.exceptions import BlockNotFound
 from web3.types import ABIEvent, FilterParams
 
-from .state import EventScannerState
 from .function_call_crawler import utfy_dict
+from .state import EventScannerState
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

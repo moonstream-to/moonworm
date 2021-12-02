@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Dict
+
 from moonstreamdb.models import (
     Base,
     EthereumBlock,

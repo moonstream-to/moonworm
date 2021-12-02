@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Union
+
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 from moonstreamdb.db import yield_db_session_ctx
@@ -13,8 +14,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.base import NO_ARG
 from web3 import Web3
 
-from .networks import Network, MODELS
 from .ethereum_state_provider import EthereumStateProvider
+from .networks import MODELS, Network
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

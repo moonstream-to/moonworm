@@ -6,16 +6,16 @@ from shutil import copyfile
 
 from web3.main import Web3
 from web3.middleware import geth_poa_middleware
-from moonworm.crawler.ethereum_state_provider import Web3StateProvider
 
+from moonworm.crawler.ethereum_state_provider import Web3StateProvider
 from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721
+from .crawler.networks import Network
 from .generator import (
     generate_contract_cli_content,
     generate_contract_interface_content,
 )
-from .crawler.networks import Network
 
 
 def write_file(content: str, path: str):
@@ -98,10 +98,11 @@ def handle_watch(args: argparse.Namespace) -> None:
         if args.network is None:
             raise ValueError("Please specify --network")
         network = Network.__members__[args.network]
+        from moonstreamdb.db import yield_db_session_ctx
+
         from .crawler.moonstream_ethereum_state_provider import (
             MoonstreamEthereumStateProvider,
         )
-        from moonstreamdb.db import yield_db_session_ctx
 
         state_provider = MoonstreamEthereumStateProvider(web3, network)
 

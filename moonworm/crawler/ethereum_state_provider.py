@@ -1,11 +1,9 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
-import logging
+
 from eth_typing.evm import ChecksumAddress
-
-
 from web3 import Web3
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
