@@ -12,11 +12,11 @@ from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721
 from .crawler.networks import Network
-from .generator import (
-    generate_brownie_interface,
+from .generators.basic import (
     generate_contract_cli_content,
     generate_contract_interface_content,
 )
+from .generators.brownie import generate_brownie_interface
 
 
 def write_file(content: str, path: str):
