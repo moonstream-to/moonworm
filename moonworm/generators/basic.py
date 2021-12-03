@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Sequence, Union, cast
 
 import black
 import black.mode
+import inflection
 import libcst as cst
 
 from ..version import MOONWORM_VERSION
@@ -132,6 +133,102 @@ def generate_contract_class(
     return cst.ClassDef(
         name=cst.Name(class_name), body=cst.IndentedBlock(body=class_functions)
     )
+
+
+def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """
+    Accepts function interface definitions from smart contract ABIs. An example input:
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_tokenId",
+                "type": "uint256"
+            }
+        ],
+        "name": "getDNA",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+
+    Returns an dictionary of the form:
+    {
+        "abi": "getDNA",
+        "method": "get_dna",
+        "cli": "get-dna",
+        "inputs": [
+            {
+                "abi": "_tokenId",
+                "method": "_tokenId",
+                "cli": "--token-id",
+                "args": "token_id",
+                "type": int,
+                "cli_type": int,
+            },
+        ],
+        "transact": False,
+    }
+    """
+    abi_name = function_abi.get("name")
+    if abi_name is None:
+        raise ValueError('function_spec -- Valid function ABI must have a "name" field')
+
+    function_name = inflection.underscore(abi_name)
+    cli_name = inflection.dasherize(function_name)
+
+    default_input_name = "arg"
+    default_counter = 1
+
+    inputs: List[Dict[str, Any]] = []
+    for item in function_abi.get("inputs", []):
+        item_abi_name = item.get("name")
+        if not item_abi_name:
+            item_abi_name = f"{default_input_name}{default_counter}"
+            default_counter += 1
+
+        item_args_name = inflection.underscore(item_abi_name).strip("_")
+
+        item_method_name = normalize_abi_name(item_args_name)
+
+        item_cli_name = f"--{inflection.dasherize(item_args_name)}"
+
+        item_type = python_type(item["type"])[0]
+
+        item_cli_type = None
+        if item_type in {"int", "bool"}:
+            item_cli_type = item_type
+
+        input_spec: Dict[str, Any] = {
+            "abi": item_abi_name,
+            "method": item_method_name,
+            "cli": item_cli_name,
+            "args": item_args_name,
+            "type": item_type,
+            "cli_type": item_cli_type,
+        }
+
+        inputs.append(input_spec)
+
+    transact = True
+    if function_abi.get("stateMutability") == "view":
+        transact = False
+
+    spec = {
+        "abi": abi_name,
+        "method": function_name,
+        "cli": cli_name,
+        "inputs": inputs,
+        "transact": transact,
+    }
+
+    return spec
 
 
 def generate_contract_constructor_function(
