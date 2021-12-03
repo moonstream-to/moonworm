@@ -34,11 +34,10 @@ def generate_brownie_contract_class(
         name=cst.Name("__init__"),
         body=cst.IndentedBlock(
             body=[
+                cst.parse_statement(f'self.contract_name = "{contract_name}"'),
                 cst.parse_statement("self.address = contract_address"),
-                cst.parse_statement(
-                    f"self.contract_class = contract_from_build({contract_name})"
-                ),
                 cst.parse_statement("self.contract = None"),
+                cst.parse_statement(f'self.abi = get_abi_json("{contract_name}")'),
                 cst.If(
                     test=cst.Comparison(
                         left=cst.Attribute(
@@ -52,7 +51,7 @@ def generate_brownie_contract_class(
                         ],
                     ),
                     body=cst.parse_statement(
-                        "self.contract: Optional[Contract] = self.contract_class.at(self.address)"
+                        "self.contract: Optional[Contract] = Contract.from_abi(self.contract_name, self.address, self.abi)"
                     ),
                 ),
             ]
@@ -114,15 +113,17 @@ def generate_brownie_constructor_function(
 
     func_name = "deploy"
     param_names.append("transaction_config")
-    proxy_call_code = (
-        f"deployed_contract = self.contract.deploy({','.join(param_names)})"
-    )
 
     func_body = cst.IndentedBlock(
         body=[
-            cst.parse_statement(proxy_call_code),
-            cst.parse_statement("self.address=deployed_contract.address"),
-            cst.parse_statement("self.contract = self.contract_class.at(self.address)"),
+            cst.parse_statement(
+                f"contract_class = contract_from_build(self.contract_name)"
+            ),
+            cst.parse_statement(
+                f"deployed_contract = contract_class.deploy({','.join(param_names)})"
+            ),
+            cst.parse_statement("self.address = deployed_contract.address"),
+            cst.parse_statement("self.contract = deployed_contract"),
         ]
     )
 
@@ -181,8 +182,9 @@ def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.Funct
             )
         )
 
-    func_raw_name = spec["method"]
-    func_name = cst.Name(value=func_raw_name)
+    func_raw_name = spec["abi"]
+    func_python_name = spec["method"]
+    func_name = cst.Name(value=func_python_name)
     if spec["transact"]:
         func_params.append(cst.Param(name=cst.Name(value="transaction_config")))
         param_names.append("transaction_config")
@@ -213,7 +215,6 @@ def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.Funct
 def generate_get_transaction_config() -> cst.FunctionDef:
     function_body = cst.IndentedBlock(
         body=[
-            cst.parse_statement("network.connect(args.network)"),
             cst.parse_statement(
                 "signer = network.accounts.load(args.sender, args.password)"
             ),
@@ -299,8 +300,11 @@ def generate_cli_handler(
     function_body_raw: List[cst.CSTNode] = []
 
     # Instantiate the contract
-    function_body_raw.append(
-        cst.parse_statement(f"contract = {contract_name}(args.address)")
+    function_body_raw.extend(
+        [
+            cst.parse_statement("network.connect(args.network)"),
+            cst.parse_statement(f"contract = {contract_name}(args.address)"),
+        ]
     )
 
     # If a transaction is required, extract transaction parameters from CLI
@@ -442,7 +446,7 @@ def generate_cli_generator(
         cst.parse_statement(
             f'parser = argparse.ArgumentParser(description="CLI for {contract_name}")'
         ),
-        cst.parse_statement("parser.set_defaults(lambda _: parser.print_help())"),
+        cst.parse_statement("parser.set_defaults(func=lambda _: parser.print_help())"),
         cst.parse_statement("subcommands = parser.add_subparsers()"),
     ]
     for item in abi:
