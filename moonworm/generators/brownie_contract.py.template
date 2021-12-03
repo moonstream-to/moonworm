@@ -2,7 +2,7 @@
 # Moonworm version : {moonworm_version}
 
 import argparse
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from eth_typing.evm import ChecksumAddress
 import os
 import json

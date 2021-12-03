@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import libcst as cst
 
@@ -158,12 +158,158 @@ def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.Funct
     )
 
 
+def generate_get_transaction_config() -> cst.FunctionDef:
+    function_body = cst.IndentedBlock(
+        body=[
+            cst.parse_statement("network.connect(args.network)"),
+            cst.parse_statement(
+                "signer = network.accounts.load(args.sender, args.password)"
+            ),
+            cst.parse_statement(
+                'transaction_config: Dict[str, Any] = {"from": signer}'
+            ),
+            cst.If(
+                test=cst.Comparison(
+                    left=cst.Attribute(
+                        attr=cst.Name(value="gas_price"), value=cst.Name(value="args")
+                    ),
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.IsNot(), comparator=cst.Name(value="None")
+                        )
+                    ],
+                ),
+                body=cst.parse_statement(
+                    'transaction_config["gas_price"] = args.gas_price'
+                ),
+            ),
+            cst.If(
+                test=cst.Comparison(
+                    left=cst.Attribute(
+                        attr=cst.Name(value="confirmations"),
+                        value=cst.Name(value="args"),
+                    ),
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.IsNot(), comparator=cst.Name(value="None")
+                        )
+                    ],
+                ),
+                body=cst.parse_statement(
+                    'transaction_config["required_confs"] = args.confirmations'
+                ),
+            ),
+        ],
+    )
+    function_def = cst.FunctionDef(
+        name=cst.Name(value="get_transaction_config"),
+        params=cst.Parameters(
+            params=[
+                cst.Param(
+                    name=cst.Name(value="args"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Attribute(
+                            attr=cst.Name(value="Namespace"),
+                            value=cst.Name(value="argparse"),
+                        )
+                    ),
+                )
+            ],
+        ),
+        body=function_body,
+        returns=cst.Annotation(
+            annotation=cst.Subscript(
+                value=cst.Name(value="Dict"),
+                slice=[
+                    cst.SubscriptElement(slice=cst.Index(value=cst.Name(value="str"))),
+                    cst.SubscriptElement(slice=cst.Index(value=cst.Name(value="Any"))),
+                ],
+            )
+        ),
+    )
+    return function_def
+
+
+def generate_cli_handler(
+    function_abi: Dict[str, Any], contract_name: str
+) -> Optional[cst.FunctionDef]:
+    """
+    Generates a handler which translates parsed command line arguments to method calls on the generated
+    smart contract interface.
+
+    Returns None if it is not appropriate for the given function to have a handler (e.g. fallback or
+    receive). constructor is handled separately with a deploy handler.
+    """
+    function_name = function_abi.get("name")
+    if function_name is None:
+        return None
+
+    function_body_raw: List[cst.CSTNode] = []
+
+    requires_transaction = True
+    if function_abi["stateMutability"] == "view":
+        requires_transaction = False
+
+    if requires_transaction:
+        function_body_raw.append(
+            cst.parse_statement("transaction_config = get_transaction_config(args)")
+        )
+    function_body_raw.append(cst.parse_statement("pass"))
+
+    function_body = cst.IndentedBlock(body=function_body_raw)
+
+    function_def = cst.FunctionDef(
+        name=cst.Name(value=f"handle_{function_name}"),
+        params=cst.Parameters(
+            params=[
+                cst.Param(
+                    name=cst.Name(value="args"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Attribute(
+                            attr=cst.Name(value="Namespace"),
+                            value=cst.Name(value="argparse"),
+                        )
+                    ),
+                )
+            ],
+        ),
+        body=function_body,
+        returns=cst.Annotation(annotation=cst.Name(value="None")),
+    )
+    return function_def
+
+
+def generate_brownie_cli(
+    abi: List[Dict[str, Any]], contract_name: str
+) -> List[cst.FunctionDef]:
+    """
+    Generates an argparse CLI to a brownie smart contract using the generated smart contract interface.
+    """
+    get_transaction_config_function = generate_get_transaction_config()
+    handlers = [get_transaction_config_function]
+    handlers.extend(
+        [
+            generate_cli_handler(function_abi, contract_name)
+            for function_abi in abi
+            if function_abi.get("type") == "function"
+            and function_abi.get("name") is not None
+        ]
+    )
+    nodes: List[cst.CSTNode] = [handler for handler in handlers if handler is not None]
+    return nodes
+
+
 def generate_brownie_interface(
-    abi: List[Dict[str, Any]], contract_name: str, format: bool = True
+    abi: List[Dict[str, Any]], contract_name: str, cli: bool = True, format: bool = True
 ) -> str:
-    contract_body = cst.Module(
-        body=[generate_brownie_contract_class(abi, contract_name)]
-    ).code
+    contract_class = generate_brownie_contract_class(abi, contract_name)
+    module_body = [contract_class]
+
+    if cli:
+        contract_cli_functions = generate_brownie_cli(abi, contract_name)
+        module_body.extend(contract_cli_functions)
+
+    contract_body = cst.Module(body=module_body).code
 
     content = BROWNIE_INTERFACE_TEMPLATE.format(
         contract_body=contract_body,
