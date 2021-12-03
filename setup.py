@@ -11,12 +11,20 @@ setup(
     version=MOONWORM_VERSION,
     packages=find_packages(),
     package_data={"moonworm": ["py.typed"]},
-    install_requires=["web3[tester]", "tqdm", "libcst", "pysha3<2.0.0,>=1.0.0", "moonstreamdb", "typing-extensions<4,>=3.7.4"],
+    install_requires=[
+        "black",
+        "inflection",
+        "libcst",
+        "moonstreamdb",
+        "pysha3<2.0.0,>=1.0.0",
+        "tqdm",
+        "typing-extensions<4,>=3.7.4",
+        "web3[tester]",
+    ],
     extras_require={
         "dev": [
-            "black",
-            "mypy",
             "isort",
+            "mypy",
             "wheel",
         ],
         "distribute": ["setuptools", "twine", "wheel"],

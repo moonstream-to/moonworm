@@ -133,3 +133,5 @@ venv/
 .venv/
 .moonworm/
 .vscode/
+.secrets/
+generated/

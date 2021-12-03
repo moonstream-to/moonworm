@@ -1,13 +1,16 @@
+from collections import defaultdict
+import copy
 import keyword
 import logging
 import os
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, List, Sequence, Union, cast
 
+import black
+import black.mode
+import inflection
 import libcst as cst
-from libcst._nodes.statement import BaseCompoundStatement
-from web3.types import ABIFunction
 
-from .version import MOONWORM_VERSION
+from ..version import MOONWORM_VERSION
 
 CONTRACT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "contract.py.template")
 try:
@@ -28,21 +31,38 @@ except Exception as e:
     logging.warn(e)
 
 
-def make_annotation(types: list):
-    if len(types) == 1:
-        return cst.Annotation(annotation=cst.Name(types[0]))
-    union_slice = []
-    for _type in types:
-        union_slice.append(
-            cst.SubscriptElement(
-                slice=cst.Index(
-                    value=cst.Name(_type),
-                )
-            ),
+def format_code(code: str) -> str:
+    formatted_code = black.format_str(code, mode=black.mode.Mode())
+    return formatted_code
+
+
+def make_annotation(types: list, optional: bool = False):
+    annotation = cst.Annotation(annotation=cst.Name(types[0]))
+    if len(types) > 1:
+        union_slice = []
+        for _type in types:
+            union_slice.append(
+                cst.SubscriptElement(
+                    slice=cst.Index(
+                        value=cst.Name(_type),
+                    )
+                ),
+            )
+        annotation = cst.Annotation(
+            annotation=cst.Subscript(value=cst.Name("Union"), slice=union_slice)
         )
-    return cst.Annotation(
-        annotation=cst.Subscript(value=cst.Name("Union"), slice=union_slice)
-    )
+
+    if optional:
+        annotation = cst.Annotation(
+            annotation=cst.Subscript(
+                value=cst.Name("Optional"),
+                slice=[
+                    cst.SubscriptElement(slice=cst.Index(value=annotation.annotation))
+                ],
+            )
+        )
+
+    return annotation
 
 
 def normalize_abi_name(name: str) -> str:
@@ -66,7 +86,7 @@ def python_type(evm_type: str) -> List[str]:
     elif evm_type == "tuple[]":
         return ["list"]
     else:
-        raise ValueError(f"Cannot convert to python type {evm_type}")
+        return ["Any"]
 
 
 def generate_contract_class(
@@ -119,6 +139,104 @@ def generate_contract_class(
     return cst.ClassDef(
         name=cst.Name(class_name), body=cst.IndentedBlock(body=class_functions)
     )
+
+
+def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """
+    Accepts function interface definitions from smart contract ABIs. An example input:
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_tokenId",
+                "type": "uint256"
+            }
+        ],
+        "name": "getDNA",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+
+    Returns an dictionary of the form:
+    {
+        "abi": "getDNA",
+        "method": "get_dna",
+        "cli": "get-dna",
+        "inputs": [
+            {
+                "abi": "_tokenId",
+                "method": "_tokenId",
+                "cli": "--token-id",
+                "args": "token_id",
+                "type": int,
+                "cli_type": int,
+            },
+        ],
+        "transact": False,
+    }
+    """
+    abi_name = function_abi.get("name")
+    if abi_name is None:
+        raise ValueError('function_spec -- Valid function ABI must have a "name" field')
+
+    underscored_name = inflection.underscore(abi_name)
+    function_name = normalize_abi_name(underscored_name)
+    cli_name = inflection.dasherize(underscored_name)
+
+    default_input_name = "arg"
+    default_counter = 1
+
+    inputs: List[Dict[str, Any]] = []
+    for item in function_abi.get("inputs", []):
+        item_abi_name = item.get("name")
+        if not item_abi_name:
+            item_abi_name = f"{default_input_name}{default_counter}"
+            default_counter += 1
+
+        item_method_name = normalize_abi_name(inflection.underscore(item_abi_name))
+        item_args_name = item_method_name
+        if item_args_name.startswith("_") or item_args_name.endswith("_"):
+            item_args_name = item_args_name.strip("_") + "_arg"
+
+        item_cli_name = f"--{inflection.dasherize(item_args_name)}"
+
+        item_type = python_type(item["type"])[0]
+
+        item_cli_type = None
+        if item_type in {"int", "bool"}:
+            item_cli_type = item_type
+
+        input_spec: Dict[str, Any] = {
+            "abi": item_abi_name,
+            "method": item_method_name,
+            "cli": item_cli_name,
+            "args": item_args_name,
+            "type": item_type,
+            "cli_type": item_cli_type,
+        }
+
+        inputs.append(input_spec)
+
+    transact = True
+    if function_abi.get("stateMutability") == "view":
+        transact = False
+
+    spec = {
+        "abi": abi_name,
+        "method": function_name,
+        "cli": cli_name,
+        "inputs": inputs,
+        "transact": transact,
+    }
+
+    return spec
 
 
 def generate_contract_constructor_function(
@@ -317,7 +435,7 @@ def generate_argument_parser_function(abi: List[Dict[str, Any]]) -> cst.Function
 
 
 def generate_contract_interface_content(
-    abi: List[Dict[str, Any]], abi_file_name: str
+    abi: List[Dict[str, Any]], abi_file_name: str, format: bool = True
 ) -> str:
     contract_body = cst.Module(body=[generate_contract_class(abi)]).code
 
@@ -326,11 +444,16 @@ def generate_contract_interface_content(
         moonworm_version=MOONWORM_VERSION,
         abi_file_name=abi_file_name,
     )
+
+    if format:
+        content = format_code(content)
+
     return content
 
 
-def generate_contract_cli_content(abi: List[Dict[str, Any]], abi_file_name: str) -> str:
-
+def generate_contract_cli_content(
+    abi: List[Dict[str, Any]], abi_file_name: str, format: bool = True
+) -> str:
     cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
 
     content = CLI_FILE_TEMPLATE.format(
@@ -338,5 +461,8 @@ def generate_contract_cli_content(abi: List[Dict[str, Any]], abi_file_name: str)
         moonworm_version=MOONWORM_VERSION,
         abi_file_name=abi_file_name,
     )
+
+    if format:
+        content = format_code(content)
 
     return content
