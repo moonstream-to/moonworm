@@ -5,7 +5,11 @@ from typing import Any, Dict, List, Optional
 import libcst as cst
 
 from ..version import MOONWORM_VERSION
-from .basic import format_code, make_annotation, normalize_abi_name, python_type
+from .basic import (
+    format_code,
+    function_spec,
+    make_annotation,
+)
 
 BROWNIE_INTERFACE_TEMPLATE_PATH = os.path.join(
     os.path.dirname(__file__), "brownie_contract.py.template"
@@ -31,7 +35,24 @@ def generate_brownie_contract_class(
             body=[
                 cst.parse_statement("self.address = contract_address"),
                 cst.parse_statement(
-                    f"self.contract = contract_from_build({contract_name})"
+                    f"self.contract_class = contract_from_build({contract_name})"
+                ),
+                cst.parse_statement("self.contract = None"),
+                cst.If(
+                    test=cst.Comparison(
+                        left=cst.Attribute(
+                            attr=cst.Name(value="address"),
+                            value=cst.Name(value="self"),
+                        ),
+                        comparisons=[
+                            cst.ComparisonTarget(
+                                operator=cst.IsNot(), comparator=cst.Name(value="None")
+                            )
+                        ],
+                    ),
+                    body=cst.parse_statement(
+                        "self.contract: Optional[Contract] = self.contract_class.at(self.address)"
+                    ),
                 ),
             ]
         ),
@@ -57,7 +78,10 @@ def generate_brownie_contract_class(
     contract_constructor["name"] = "constructor"
     class_functions = (
         [class_constructor]
-        + [generate_brownie_constructor_function(contract_constructor)]
+        + [
+            generate_brownie_constructor_function(contract_constructor),
+            generate_assert_contract_is_instantiated(),
+        ]
         + [
             generate_brownie_contract_function(function)
             for function in abi
@@ -72,29 +96,23 @@ def generate_brownie_contract_class(
 def generate_brownie_constructor_function(
     func_object: Dict[str, Any]
 ) -> cst.FunctionDef:
-
-    default_param_name = "arg"
-    default_counter = 1
+    spec = function_spec(func_object)
     func_params = []
     func_params.append(cst.Param(name=cst.Name("self")))
     param_names = []
-    for param in func_object["inputs"]:
-        param_name = normalize_abi_name(param["name"])
-        if param_name == "":
-            param_name = f"{default_param_name}{default_counter}"
-            default_counter += 1
-        param_type = make_annotation(python_type(param["type"]))
-        param_names.append(param_name)
+    for param in spec["inputs"]:
+        param_type = make_annotation([param["type"]])
+        param_names.append(param["method"])
         func_params.append(
             cst.Param(
-                name=cst.Name(value=param_name),
+                name=cst.Name(value=param["method"]),
                 annotation=param_type,
             )
         )
-    func_params.append(cst.Param(name=cst.Name("signer")))
+    func_params.append(cst.Param(name=cst.Name("transaction_config")))
 
     func_name = "deploy"
-    param_names.append("{'from': signer}")
+    param_names.append("transaction_config")
     proxy_call_code = (
         f"deployed_contract = self.contract.deploy({','.join(param_names)})"
     )
@@ -103,6 +121,7 @@ def generate_brownie_constructor_function(
         body=[
             cst.parse_statement(proxy_call_code),
             cst.parse_statement("self.address=deployed_contract.address"),
+            cst.parse_statement("self.contract = self.contract_class.at(self.address)"),
         ]
     )
 
@@ -113,20 +132,46 @@ def generate_brownie_constructor_function(
     )
 
 
-def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.FunctionDef:
+def generate_assert_contract_is_instantiated() -> cst.FunctionDef:
+    function_body = cst.IndentedBlock(
+        body=[
+            cst.If(
+                test=cst.Comparison(
+                    left=cst.Attribute(
+                        attr=cst.Name(value="contract"), value=cst.Name(value="self")
+                    ),
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.Is(), comparator=cst.Name(value="None")
+                        )
+                    ],
+                ),
+                body=cst.parse_statement(
+                    'raise Exception("contract has not been instantiated")'
+                ),
+            ),
+        ],
+    )
+    function_def = cst.FunctionDef(
+        name=cst.Name(value="assert_contract_is_instantiated"),
+        params=cst.Parameters(
+            params=[cst.Param(name=cst.Name(value="self"))],
+        ),
+        body=function_body,
+        returns=cst.Annotation(annotation=cst.Name(value="None")),
+    )
+    return function_def
 
-    default_param_name = "arg"
-    default_counter = 1
+
+def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.FunctionDef:
+    spec = function_spec(func_object)
     func_params = []
     func_params.append(cst.Param(name=cst.Name("self")))
 
     param_names = []
-    for param in func_object["inputs"]:
-        param_name = normalize_abi_name(param["name"])
-        if param_name == "":
-            param_name = f"{default_param_name}{default_counter}"
-            default_counter += 1
-        param_type = make_annotation(python_type(param["type"]))
+    for param in spec["inputs"]:
+        param_type = make_annotation([param["type"]])
+        param_name = param["method"]
         param_names.append(param_name)
         func_params.append(
             cst.Param(
@@ -135,19 +180,25 @@ def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.Funct
             )
         )
 
-    func_raw_name = normalize_abi_name(func_object["name"])
-    func_name = cst.Name(func_raw_name)
-    if func_object["stateMutability"] == "view":
-        proxy_call_code = (
-            f"return self.contract.{func_raw_name}.call({','.join(param_names)})"
-        )
-    else:
-        func_params.append(cst.Param(name=cst.Name(value="signer")))
-        param_names.append(f"{{'from': signer}}")
+    func_raw_name = spec["method"]
+    func_name = cst.Name(value=func_raw_name)
+    if spec["transact"]:
+        func_params.append(cst.Param(name=cst.Name(value="transaction_config")))
+        param_names.append("transaction_config")
         proxy_call_code = (
             f"return self.contract.{func_raw_name}({','.join(param_names)})"
         )
-    func_body = cst.IndentedBlock(body=[cst.parse_statement(proxy_call_code)])
+    else:
+        proxy_call_code = (
+            f"return self.contract.{func_raw_name}.call({','.join(param_names)})"
+        )
+
+    func_body = cst.IndentedBlock(
+        body=[
+            cst.parse_statement("self.assert_contract_is_instantiated()"),
+            cst.parse_statement(proxy_call_code),
+        ]
+    )
     func_returns = cst.Annotation(annotation=cst.Name(value="Any"))
 
     return cst.FunctionDef(
@@ -241,12 +292,17 @@ def generate_cli_handler(
     Returns None if it is not appropriate for the given function to have a handler (e.g. fallback or
     receive). constructor is handled separately with a deploy handler.
     """
-    function_name = function_abi.get("name")
-    if function_name is None:
-        return None
+    spec = function_spec(function_abi)
+    function_name = spec["method"]
 
     function_body_raw: List[cst.CSTNode] = []
 
+    # Instantiate the contract
+    function_body_raw.append(
+        cst.parse_statement(f"contract = {contract_name}(args.address)")
+    )
+
+    # If a transaction is required, extract transaction parameters from CLI
     requires_transaction = True
     if function_abi["stateMutability"] == "view":
         requires_transaction = False
@@ -255,7 +311,43 @@ def generate_cli_handler(
         function_body_raw.append(
             cst.parse_statement("transaction_config = get_transaction_config(args)")
         )
-    function_body_raw.append(cst.parse_statement("pass"))
+
+    # Call contract method
+    call_args: List[cst.Arg] = []
+    for param in spec["inputs"]:
+        call_args.append(
+            cst.Arg(
+                keyword=cst.Name(value=param["method"]),
+                value=cst.Attribute(
+                    attr=cst.Name(value=param["args"]), value=cst.Name(value="args")
+                ),
+            )
+        )
+    if requires_transaction:
+        call_args.append(
+            cst.Arg(
+                keyword=cst.Name(value="transaction_config"),
+                value=cst.Name(value="transaction_config"),
+            )
+        )
+    method_call = cst.Call(
+        func=cst.Attribute(
+            attr=cst.Name(value=spec["method"]),
+            value=cst.Name(value="contract"),
+        ),
+        args=call_args,
+    )
+    method_call_result_statement = cst.SimpleStatementLine(
+        body=[
+            cst.Assign(
+                targets=[cst.AssignTarget(target=cst.Name(value="result"))],
+                value=method_call,
+            )
+        ]
+    )
+    function_body_raw.append(method_call_result_statement)
+
+    function_body_raw.append(cst.parse_statement("print(result)"))
 
     function_body = cst.IndentedBlock(body=function_body_raw)
 

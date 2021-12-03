@@ -2,12 +2,12 @@
 # Moonworm version : {moonworm_version}
 
 import argparse
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from eth_typing.evm import ChecksumAddress
 import os
 import json
 
-from brownie import network, project
+from brownie import Contract, network, project
 from brownie.network.contract import ContractContainer
 
 

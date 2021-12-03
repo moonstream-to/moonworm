@@ -1,3 +1,5 @@
+from collections import defaultdict
+import copy
 import keyword
 import logging
 import os
@@ -35,28 +37,32 @@ def format_code(code: str) -> str:
 
 
 def make_annotation(types: list, optional: bool = False):
-    if len(types) == 1:
-        return cst.Annotation(annotation=cst.Name(types[0]))
-    union_slice = []
-    for _type in types:
-        union_slice.append(
-            cst.SubscriptElement(
-                slice=cst.Index(
-                    value=cst.Name(_type),
-                )
-            ),
+    annotation = cst.Annotation(annotation=cst.Name(types[0]))
+    if len(types) > 1:
+        union_slice = []
+        for _type in types:
+            union_slice.append(
+                cst.SubscriptElement(
+                    slice=cst.Index(
+                        value=cst.Name(_type),
+                    )
+                ),
+            )
+        annotation = cst.Annotation(
+            annotation=cst.Subscript(value=cst.Name("Union"), slice=union_slice)
         )
-    annotation = cst.Annotation(
-        annotation=cst.Subscript(value=cst.Name("Union"), slice=union_slice)
-    )
 
     if optional:
         annotation = cst.Annotation(
             annotation=cst.Subscript(
                 value=cst.Name("Optional"),
-                slice=cast(Sequence[cst.SubscriptElement], annotation),
+                slice=[
+                    cst.SubscriptElement(slice=cst.Index(value=annotation.annotation))
+                ],
             )
         )
+
+    return annotation
 
 
 def normalize_abi_name(name: str) -> str:
@@ -180,8 +186,9 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     if abi_name is None:
         raise ValueError('function_spec -- Valid function ABI must have a "name" field')
 
-    function_name = inflection.underscore(abi_name)
-    cli_name = inflection.dasherize(function_name)
+    underscored_name = inflection.underscore(abi_name)
+    function_name = normalize_abi_name(underscored_name)
+    cli_name = inflection.dasherize(underscored_name)
 
     default_input_name = "arg"
     default_counter = 1
@@ -193,9 +200,10 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
             item_abi_name = f"{default_input_name}{default_counter}"
             default_counter += 1
 
-        item_args_name = inflection.underscore(item_abi_name).strip("_")
-
-        item_method_name = normalize_abi_name(item_args_name)
+        item_method_name = normalize_abi_name(inflection.underscore(item_abi_name))
+        item_args_name = item_method_name
+        if item_args_name.startswith("_") or item_args_name.endswith("_"):
+            item_args_name = item_args_name.strip("_") + "_arg"
 
         item_cli_name = f"--{inflection.dasherize(item_args_name)}"
 
