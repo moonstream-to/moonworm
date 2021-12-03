@@ -21,9 +21,9 @@ class TestFunctionSpec(unittest.TestCase):
             "inputs": [
                 {
                     "abi": "_tokenId",
-                    "method": "token_id",
-                    "cli": "--token-id",
-                    "args": "token_id",
+                    "method": "_token_id",
+                    "cli": "--token-id-arg",
+                    "args": "token_id_arg",
                     "type": "int",
                     "cli_type": "int",
                 },
