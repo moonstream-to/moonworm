@@ -199,6 +199,7 @@ def generate_get_transaction_config() -> cst.FunctionDef:
                     'transaction_config["required_confs"] = args.confirmations'
                 ),
             ),
+            cst.parse_statement("return transaction_config"),
         ],
     )
     function_def = cst.FunctionDef(
