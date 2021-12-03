@@ -3,6 +3,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 import libcst as cst
+from libcst._nodes.statement import SimpleStatementLine
 
 from ..version import MOONWORM_VERSION
 from .basic import (
@@ -372,6 +373,175 @@ def generate_cli_handler(
     return function_def
 
 
+def generate_add_default_arguments() -> cst.FunctionDef:
+    function_body = cst.IndentedBlock(
+        body=[
+            cst.parse_statement(
+                'parser.add_argument("--network", required=True, help="Name of brownie network to connect to")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--address", required=False, help="Address of deployed contract to connect to")'
+            ),
+            # TODO(zomglings): The generated code could be confusing for users. Fix this so that it adds additional arguments as part of the "if" statement
+            cst.If(
+                test=cst.UnaryOperation(
+                    operator=cst.Not(), expression=cst.Name(value="transact")
+                ),
+                body=cst.parse_statement("return"),
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--sender", required=True, help="Path to keystore file for transaction sender")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--password", required=False, help="Password to keystore file (if you do not provide it, you will be prompted for it)")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--gas-price", default=None, help="Gas price at which to submit transaction")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--confirmations", type=int, default=None, help="Number of confirmations to await before considering a transaction completed")'
+            ),
+        ],
+    )
+    function_def = cst.FunctionDef(
+        name=cst.Name(value="add_default_arguments"),
+        params=cst.Parameters(
+            params=[
+                cst.Param(
+                    name=cst.Name(value="parser"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Attribute(
+                            attr=cst.Name(value="ArgumentParser"),
+                            value=cst.Name(value="argparse"),
+                        )
+                    ),
+                ),
+                cst.Param(
+                    name=cst.Name(value="transact"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Name(value="bool"),
+                    ),
+                ),
+            ],
+        ),
+        body=function_body,
+        returns=cst.Annotation(annotation=cst.Name(value="None")),
+    )
+    return function_def
+
+
+def generate_cli_generator(
+    abi: List[Dict[str, Any]], contract_name: Optional[str] = None
+) -> cst.FunctionDef:
+    """
+    Generates a generate_cli function that creates a CLI for the generated contract.
+    """
+    if contract_name is None:
+        contract_name = "generated contract"
+    statements: List[cst.SimpleStatementLine] = [
+        cst.parse_statement(
+            f'parser = argparse.ArgumentParser(description="CLI for {contract_name}")'
+        ),
+        cst.parse_statement("parser.set_defaults(lambda _: parser.print_help())"),
+        cst.parse_statement("subcommands = parser.add_subparsers()"),
+    ]
+    for item in abi:
+        if item["type"] != "function":
+            continue
+        spec = function_spec(item)
+        subparser_statements: List[SimpleStatementLine] = [cst.Newline()]
+
+        subparser_name = f'{spec["method"]}_parser'
+
+        subparser_statements.append(
+            cst.parse_statement(
+                f'{subparser_name} = subcommands.add_parser("{spec["cli"]}")'
+            )
+        )
+        subparser_statements.append(
+            cst.parse_statement(
+                f'add_default_arguments({subparser_name}, {spec["transact"]})'
+            )
+        )
+
+        for param in spec["inputs"]:
+            call_args = [
+                cst.Arg(
+                    value=cst.SimpleString(value=f'u"{param["cli"]}"'),
+                ),
+                cst.Arg(
+                    keyword=cst.Name(value="required"),
+                    value=cst.Name(value="True"),
+                ),
+            ]
+            if param["type"] is not None:
+                cst.Arg(
+                    keyword=cst.Name(value="type"),
+                    value=cst.Name(param["type"]),
+                ),
+
+            add_argument_call = cst.Call(
+                func=cst.Attribute(
+                    attr=cst.Name(value="add_argument"),
+                    value=cst.Name(value=subparser_name),
+                ),
+                args=call_args,
+            )
+            add_argument_statement = cst.SimpleStatementLine(
+                body=[cst.Expr(value=add_argument_call)]
+            )
+            subparser_statements.append(add_argument_statement)
+
+        subparser_statements.append(
+            cst.parse_statement(
+                f"{subparser_name}.set_defaults(func=handle_{spec['method']})"
+            )
+        )
+        subparser_statements.append(cst.Newline())
+        statements.extend(subparser_statements)
+
+    statements.append(cst.parse_statement("return parser"))
+
+    function_body = cst.IndentedBlock(body=statements)
+    function_def = cst.FunctionDef(
+        name=cst.Name(value="generate_cli"),
+        params=cst.Parameters(params=[]),
+        body=function_body,
+        returns=cst.Annotation(
+            annotation=cst.Attribute(
+                attr=cst.Name(value="ArgumentParser"), value=cst.Name(value="argparse")
+            )
+        ),
+    )
+    return function_def
+
+
+def generate_main() -> cst.FunctionDef:
+    statements: List[cst.SimpleStatementLine] = [
+        cst.parse_statement("parser = generate_cli()"),
+        cst.parse_statement("args = parser.parse_args()"),
+        cst.parse_statement("args.func(args)"),
+    ]
+    function_body = cst.IndentedBlock(body=statements)
+    function_def = cst.FunctionDef(
+        name=cst.Name(value="main"),
+        params=cst.Parameters(params=[]),
+        body=function_body,
+        returns=cst.Annotation(annotation=cst.Name(value="None")),
+    )
+    return function_def
+
+
+def generate_runner() -> cst.If:
+    module = cst.parse_module(
+        """
+if __name__ == "__main__":
+    main()
+    """
+    )
+    return module.body[0]
+
+
 def generate_brownie_cli(
     abi: List[Dict[str, Any]], contract_name: str
 ) -> List[cst.FunctionDef]:
@@ -379,7 +549,8 @@ def generate_brownie_cli(
     Generates an argparse CLI to a brownie smart contract using the generated smart contract interface.
     """
     get_transaction_config_function = generate_get_transaction_config()
-    handlers = [get_transaction_config_function]
+    add_default_arguments_function = generate_add_default_arguments()
+    handlers = [get_transaction_config_function, add_default_arguments_function]
     handlers.extend(
         [
             generate_cli_handler(function_abi, contract_name)
@@ -389,6 +560,9 @@ def generate_brownie_cli(
         ]
     )
     nodes: List[cst.CSTNode] = [handler for handler in handlers if handler is not None]
+    nodes.append(generate_cli_generator(abi, contract_name))
+    nodes.append(generate_main())
+    nodes.append(generate_runner())
     return nodes
 
 
