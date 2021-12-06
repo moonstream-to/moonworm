@@ -1,8 +1,8 @@
-from collections import defaultdict
 import copy
 import keyword
 import logging
 import os
+from collections import defaultdict
 from typing import Any, Dict, List, Sequence, Union, cast
 
 import black
