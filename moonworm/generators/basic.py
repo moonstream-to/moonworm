@@ -1,8 +1,8 @@
-from collections import defaultdict
 import copy
 import keyword
 import logging
 import os
+from collections import defaultdict
 from typing import Any, Dict, List, Sequence, Union, cast
 
 import black
@@ -73,7 +73,11 @@ def normalize_abi_name(name: str) -> str:
 
 
 def python_type(evm_type: str) -> List[str]:
+    if evm_type.endswith("]"):
+        return ["List"]
     if evm_type.startswith(("uint", "int")):
+        return ["int"]
+    if evm_type.startswith(("int", "int")):
         return ["int"]
     elif evm_type.startswith("bytes"):
         return ["bytes"]
@@ -83,8 +87,6 @@ def python_type(evm_type: str) -> List[str]:
         return ["ChecksumAddress"]
     elif evm_type == "bool":
         return ["bool"]
-    elif evm_type == "tuple[]":
-        return ["list"]
     else:
         return ["Any"]
 

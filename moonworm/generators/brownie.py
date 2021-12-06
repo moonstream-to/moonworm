@@ -6,11 +6,7 @@ import libcst as cst
 from libcst._nodes.statement import SimpleStatementLine
 
 from ..version import MOONWORM_VERSION
-from .basic import (
-    format_code,
-    function_spec,
-    make_annotation,
-)
+from .basic import format_code, function_spec, make_annotation
 
 BROWNIE_INTERFACE_TEMPLATE_PATH = os.path.join(
     os.path.dirname(__file__), "brownie_contract.py.template"
