@@ -13,6 +13,7 @@ setup(
     package_data={"moonworm": ["py.typed"]},
     install_requires=[
         "black",
+        "inflection",
         "libcst",
         "moonstreamdb",
         "pysha3<2.0.0,>=1.0.0",
