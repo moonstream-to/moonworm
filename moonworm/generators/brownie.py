@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 from typing import Any, Dict, List, Optional
@@ -274,6 +275,93 @@ def generate_get_transaction_config() -> cst.FunctionDef:
     return function_def
 
 
+def generate_deploy_handler(
+    constructor_abi: Dict[str, Any], contract_name: str
+) -> Optional[cst.FunctionDef]:
+    """
+    Generates a handler which deploys the given contract to the specified blockchain using the constructor
+    with the given signature.
+    """
+    # Since we mutate the ABI before passing to function_spec (to conform to its assumptions), make
+    # a copy of the constructor_abi.
+    local_abi = copy.deepcopy(constructor_abi)
+    local_abi["name"] = "deploy"
+    spec = function_spec(local_abi)
+    function_name = spec["method"]
+
+    function_body_raw: List[cst.CSTNode] = []
+
+    # Instantiate the contract
+    function_body_raw.extend(
+        [
+            cst.parse_statement("network.connect(args.network)"),
+            cst.parse_statement("transaction_config = get_transaction_config(args)"),
+            cst.parse_statement(f"contract = {contract_name}(None)"),
+        ]
+    )
+
+    # Call contract method
+    call_args: List[cst.Arg] = []
+    for param in spec["inputs"]:
+        call_args.append(
+            cst.Arg(
+                keyword=cst.Name(value=param["method"]),
+                value=cst.Attribute(
+                    attr=cst.Name(value=param["args"]), value=cst.Name(value="args")
+                ),
+            )
+        )
+
+    call_args.append(
+        cst.Arg(
+            keyword=cst.Name(value="transaction_config"),
+            value=cst.Name(value="transaction_config"),
+        )
+    )
+
+    method_call = cst.Call(
+        func=cst.Attribute(
+            attr=cst.Name(value=spec["method"]),
+            value=cst.Name(value="contract"),
+        ),
+        args=call_args,
+    )
+
+    method_call_result_statement = cst.SimpleStatementLine(
+        body=[
+            cst.Assign(
+                targets=[cst.AssignTarget(target=cst.Name(value="result"))],
+                value=method_call,
+            )
+        ]
+    )
+    function_body_raw.append(method_call_result_statement)
+
+    function_body_raw.append(cst.parse_statement("print(result)"))
+
+    function_body = cst.IndentedBlock(body=function_body_raw)
+
+    function_def = cst.FunctionDef(
+        name=cst.Name(value=f"handle_{function_name}"),
+        params=cst.Parameters(
+            params=[
+                cst.Param(
+                    name=cst.Name(value="args"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Attribute(
+                            attr=cst.Name(value="Namespace"),
+                            value=cst.Name(value="argparse"),
+                        )
+                    ),
+                )
+            ],
+        ),
+        body=function_body,
+        returns=cst.Annotation(annotation=cst.Name(value="None")),
+    )
+    return function_def
+
+
 def generate_cli_handler(
     function_abi: Dict[str, Any], contract_name: str
 ) -> Optional[cst.FunctionDef]:
@@ -440,10 +528,14 @@ def generate_cli_generator(
         cst.parse_statement("subcommands = parser.add_subparsers()"),
     ]
 
-    for item in abi:
-        if item["type"] != "function":
-            continue
-        spec = function_spec(item)
+    constructor_abi = get_constructor(abi)
+    constructor_abi["name"] = "deploy"
+    constructor_spec = function_spec(constructor_abi)
+
+    specs: List[Dict[str, Any]] = [constructor_spec]
+    specs.extend([function_spec(item) for item in abi if item["type"] == "function"])
+
+    for spec in specs:
         subparser_statements: List[SimpleStatementLine] = [cst.Newline()]
 
         subparser_name = f'{spec["method"]}_parser'
@@ -545,7 +637,12 @@ def generate_brownie_cli(
     """
     get_transaction_config_function = generate_get_transaction_config()
     add_default_arguments_function = generate_add_default_arguments()
-    handlers = [get_transaction_config_function, add_default_arguments_function]
+    add_deploy_handler = generate_deploy_handler(get_constructor(abi), contract_name)
+    handlers = [
+        get_transaction_config_function,
+        add_default_arguments_function,
+        add_deploy_handler,
+    ]
     handlers.extend(
         [
             generate_cli_handler(function_abi, contract_name)
