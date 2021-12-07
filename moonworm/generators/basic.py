@@ -31,6 +31,20 @@ except Exception as e:
     logging.warn(e)
 
 
+DEFAULT_CONSTRUCTOR = {
+    "inputs": [],
+    "stateMutability": "payable",
+    "type": "constructor",
+}
+
+
+def get_constructor(abi: List[Dict[str, Any]]) -> Dict[str, Any]:
+    for item in abi:
+        if item["type"] == "constructor":
+            return item
+    return DEFAULT_CONSTRUCTOR
+
+
 def format_code(code: str) -> str:
     formatted_code = black.format_str(code, mode=black.mode.Mode())
     return formatted_code

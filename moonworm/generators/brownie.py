@@ -6,7 +6,7 @@ import libcst as cst
 from libcst._nodes.statement import SimpleStatementLine
 
 from ..version import MOONWORM_VERSION
-from .basic import format_code, function_spec, make_annotation
+from .basic import format_code, function_spec, get_constructor, make_annotation
 
 BROWNIE_INTERFACE_TEMPLATE_PATH = os.path.join(
     os.path.dirname(__file__), "brownie_contract.py.template"
@@ -63,15 +63,9 @@ def generate_brownie_contract_class(
         ),
     )
 
-    contract_constructors = [c for c in abi if c["type"] == "constructor"]
-    if len(contract_constructors) == 1:
-        contract_constructor = contract_constructors[0]
-    elif len(contract_constructors) == 0:
-        contract_constructor = {"inputs": []}
-    else:
-        raise ValueError("Multiple constructors found in ABI")
-
+    contract_constructor = get_constructor(abi)
     contract_constructor["name"] = "constructor"
+
     class_functions = (
         [class_constructor]
         + [
@@ -445,6 +439,7 @@ def generate_cli_generator(
         cst.parse_statement("parser.set_defaults(func=lambda _: parser.print_help())"),
         cst.parse_statement("subcommands = parser.add_subparsers()"),
     ]
+
     for item in abi:
         if item["type"] != "function":
             continue
