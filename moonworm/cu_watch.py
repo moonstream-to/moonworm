@@ -209,7 +209,8 @@ def watch_cu_contract(
     web3: Web3,
     contract_address: ChecksumAddress,
     contract_abi: List[Dict[str, Any]],
-    num_confirmations: int = 10,
+    num_confirmations: int = 60,
+    min_blocks_to_crawl: int = 10,
     sleep_time: float = 1,
     start_block: Optional[int] = None,
     force_start: bool = False,
@@ -261,54 +262,74 @@ def watch_cu_contract(
         event_abis = [item for item in contract_abi if item["type"] == "event"]
 
         while True:
-            session.query(PolygonLabel).limit(1).one()
-            time.sleep(sleep_time)
-            end_block = min(web3.eth.blockNumber - num_confirmations, current_block + 5)
-            if end_block < current_block:
-                sleep_time *= 2
-                continue
-
-            sleep_time /= 2
-
-            logger.info("Getting txs")
-            crawler.crawl(current_block, end_block)
-            if function_call_state.state:
-                _add_function_call_labels(
-                    session, function_call_state.state, contract_address
+            try:
+                session.execute("select 1")
+                time.sleep(sleep_time)
+                end_block = min(
+                    web3.eth.blockNumber - num_confirmations, current_block + 100
                 )
-                logger.info(f"Got  {len(function_call_state.state)} transaction calls:")
-                function_call_state.flush()
+                if end_block < current_block + min_blocks_to_crawl:
+                    sleep_time += 1
+                    continue
 
-            logger.info("Getting events")
-            all_events = []
-            for event_abi in event_abis:
-                raw_events = _fetch_events_chunk(
-                    web3,
-                    event_abi,
-                    current_block,
-                    end_block,
-                    [contract_address],
-                )
+                sleep_time /= 2
 
-                for raw_event in raw_events:
+                logger.info("Getting txs")
+                crawler.crawl(current_block, end_block)
+                if function_call_state.state:
+                    _add_function_call_labels(
+                        session, function_call_state.state, contract_address
+                    )
+                    logger.info(
+                        f"Got  {len(function_call_state.state)} transaction calls:"
+                    )
+                    function_call_state.flush()
 
-                    event = {
-                        "event": raw_event["event"],
-                        "args": json.loads(
-                            Web3.toJSON(utfy_dict(dict(raw_event["args"])))
-                        ),
-                        "address": raw_event["address"],
-                        "blockNumber": raw_event["blockNumber"],
-                        "transactionHash": raw_event["transactionHash"].hex(),
-                        "blockTimestamp": crawler.ethereum_state_provider.get_block_timestamp(
-                            raw_event["blockNumber"]
-                        ),
-                        "logIndex": raw_event["logIndex"],
-                    }
-                    all_events.append(event)
+                logger.info("Getting events")
+                all_events = []
+                for event_abi in event_abis:
+                    raw_events = _fetch_events_chunk(
+                        web3,
+                        event_abi,
+                        current_block,
+                        end_block,
+                        [contract_address],
+                    )
 
-            if all_events:
-                print(f"Got {len(all_events)} events:")
-                _add_event_labels(session, all_events, contract_address)
-            logger.info(f"Current block {end_block + 1}")
-            current_block = end_block + 1
+                    for raw_event in raw_events:
+                        raw_event["blockTimestamp"] = (
+                            crawler.ethereum_state_provider.get_block_timestamp(
+                                raw_event["blockNumber"]
+                            ),
+                        )
+                        all_events.append(raw_event)
+
+                if all_events:
+                    print(f"Got {len(all_events)} events:")
+                    _add_event_labels(session, all_events, contract_address)
+                logger.info(f"Current block {end_block + 1}")
+                current_block = end_block + 1
+            except Exception as e:
+                logger.error(f"Something went wrong: {e}")
+                logger.info(f"Trying to recover from error")
+                for i in range(10):
+                    logger.info(f"Attempt {i}:")
+                    try:
+                        time.sleep(10)
+                        logger.info("Trying to reconnect to database")
+                        session.rollback()
+                        session.execute("select 1")
+                        logger.info("Trying to reconnect to web3")
+                        web3.eth.block_number
+                        break
+                    except Exception as e:
+                        logger.error(f"Failed: {e}")
+                        continue
+
+                try:
+                    session.execute("select 1")
+                    web3.eth.block_number
+                    continue
+                except Exception as e:
+                    logger.error("Moonworm is going to die")
+                    raise e
