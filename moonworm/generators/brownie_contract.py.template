@@ -2,13 +2,14 @@
 # Moonworm version : {moonworm_version}
 
 import argparse
-from typing import Any, Dict, List, Optional, Union
-from eth_typing.evm import ChecksumAddress
-import os
 import json
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 from brownie import Contract, network, project
 from brownie.network.contract import ContractContainer
+from eth_typing.evm import ChecksumAddress
 
 
 PROJECT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -33,7 +34,10 @@ def get_abi_json(abi_name: str) -> List[Dict[str, Any]]:
 
 
 def contract_from_build(abi_name: str) -> ContractContainer:
-    PROJECT = project.load(PROJECT_DIRECTORY)
+    # This is workaround because brownie currently doesn't support loading the same project multiple
+    # times. This causes problems when using multiple contracts from the same project in the same
+    # python project.
+    PROJECT = project.main.Project("moonworm", Path(PROJECT_DIRECTORY))
 
     abi_full_path = os.path.join(BUILD_DIRECTORY, f"{{abi_name}}.json")
     if not os.path.isfile(abi_full_path):
