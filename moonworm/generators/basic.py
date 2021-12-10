@@ -226,7 +226,7 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         item_type = python_type(item["type"])[0]
 
         item_cli_type = None
-        if item_type in {"int", "bool"}:
+        if item_type in {"int", "str"}:
             item_cli_type = item_type
 
         input_spec: Dict[str, Any] = {
@@ -235,6 +235,7 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
             "cli": item_cli_name,
             "args": item_args_name,
             "type": item_type,
+            "raw_type": item["type"],
             "cli_type": item_cli_type,
         }
 
