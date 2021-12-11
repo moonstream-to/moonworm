@@ -584,20 +584,9 @@ def generate_cli_generator(
                 call_args.append(
                     cst.Arg(
                         keyword=cst.Name(value="type"),
-                        value=cst.parse_expression(
-                            "lambda x: (str(x).lower() == 'true')"
-                        ),
+                        value=cst.parse_expression("boolean_argument_type"),
                     ),
                 )
-                call_args.append(
-                    cst.Arg(
-                        keyword=cst.Name("choices"),
-                        value=cst.parse_expression("['true', 'false']"),
-                    ),
-                )
-
-            
-
 
             add_argument_call = cst.Call(
                 func=cst.Attribute(
