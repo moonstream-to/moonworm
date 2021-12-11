@@ -577,7 +577,7 @@ def generate_cli_generator(
                 call_args.append(
                     cst.Arg(
                         keyword=cst.Name(value="nargs"),
-                        value=cst.SimpleString(value=f'u"+"'),
+                        value=cst.SimpleString(value='u"+"'),
                     ),
                 )
             elif param["type"] == "bool":
@@ -589,6 +589,15 @@ def generate_cli_generator(
                         ),
                     ),
                 )
+                call_args.append(
+                    cst.Arg(
+                        keyword=cst.Name("choices"),
+                        value=cst.parse_expression("['true', 'false']"),
+                    ),
+                )
+
+            
+
 
             add_argument_call = cst.Call(
                 func=cst.Attribute(
