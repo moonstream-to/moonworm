@@ -560,12 +560,33 @@ def generate_cli_generator(
                     keyword=cst.Name(value="required"),
                     value=cst.Name(value="True"),
                 ),
-            ]
-            if param["type"] is not None:
                 cst.Arg(
-                    keyword=cst.Name(value="type"),
-                    value=cst.Name(param["type"]),
+                    keyword=cst.Name(value="help"),
+                    value=cst.SimpleString(value=f'u"Type: {param["raw_type"]}"'),
                 ),
+            ]
+            if param["cli_type"] is not None:
+                call_args.append(
+                    cst.Arg(
+                        keyword=cst.Name(value="type"),
+                        value=cst.Name(param["cli_type"]),
+                    ),
+                )
+
+            if param["type"] == "List":
+                call_args.append(
+                    cst.Arg(
+                        keyword=cst.Name(value="nargs"),
+                        value=cst.SimpleString(value='u"+"'),
+                    ),
+                )
+            elif param["type"] == "bool":
+                call_args.append(
+                    cst.Arg(
+                        keyword=cst.Name(value="type"),
+                        value=cst.parse_expression("boolean_argument_type"),
+                    ),
+                )
 
             add_argument_call = cst.Call(
                 func=cst.Attribute(

@@ -15,6 +15,18 @@ from eth_typing.evm import ChecksumAddress
 PROJECT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 BUILD_DIRECTORY = os.path.join(PROJECT_DIRECTORY, "build", "contracts")
 
+def boolean_argument_type(raw_value: str) -> bool:
+    TRUE_VALUES = ["1", "t", "y", "true", "yes"]
+    FALSE_VALUES = ["0", "f", "n", "false", "no"]
+
+    if raw_value.lower() in TRUE_VALUES:
+        return True
+    elif raw_value.lower() in FALSE_VALUES:
+        return False
+
+    raise ValueError(
+        f"Invalid boolean argument: {{raw_value}}. Value must be one of: {{','.join(TRUE_VALUES + FALSE_VALUES)}}"
+    )
 
 def get_abi_json(abi_name: str) -> List[Dict[str, Any]]:
     abi_full_path = os.path.join(BUILD_DIRECTORY, f"{{abi_name}}.json")
