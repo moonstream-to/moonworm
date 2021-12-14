@@ -28,15 +28,28 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
     """
 
     def __init__(
-        self, w3: Web3, network: Network, db_session: Optional[Session] = None
+        self,
+        w3: Web3,
+        network: Network,
+        db_session: Optional[Session] = None,
+        batch_load_count: int = 100,
     ):
         self.w3 = w3
         self.db_session = db_session
+
+        self.metrics = {
+            "web3_get_block_calls": 0,
+            "web3_get_transaction_receipt_calls": 0,
+            "db_get_block_calls": 0,
+            "db_get_transaction_calls": 0,
+            "block_found_in_cache": 0,
+        }
 
         self.blocks_model = MODELS[network]["blocks"]
         self.transactions_model = MODELS[network]["transactions"]
         self.labels_model = MODELS[network]["labels"]
         self.network = network
+        self.batch_load_count = batch_load_count
         self.blocks_cache = {}
 
     def set_db_session(self, db_session: Session):
@@ -46,6 +59,7 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         self.db_session = None
 
     def get_transaction_reciept(self, transaction_hash: str) -> Dict[str, Any]:
+        self.metrics["web3_get_transaction_receipt_calls"] += 1
         return self.w3.eth.get_transaction_receipt(transaction_hash)
 
     def get_last_block_number(self) -> int:
@@ -81,17 +95,17 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         }
         return tx
 
-    def _get_block_from_db(
-        self, block_number: int, batch_load_count: int = 100
-    ) -> Optional[Dict[str, Any]]:
+    def _get_block_from_db(self, block_number: int) -> Optional[Dict[str, Any]]:
         if self.db_session is None:
             return None
+
+        self.metrics["db_get_block_calls"] += 1
 
         raw_blocks = (
             self.db_session.query(self.blocks_model)
             .filter(self.blocks_model.block_number >= block_number)
             .order_by(self.blocks_model.block_number.asc())
-            .limit(batch_load_count)
+            .limit(self.batch_load_count)
         )
         blocks = {raw_block.block_number: raw_block for raw_block in raw_blocks}
 
@@ -108,6 +122,7 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
             .order_by(self.transactions_model.transaction_index.asc())
             .all()
         )
+        self.metrics["db_get_transaction_calls"] += 1
 
         block_transactions = {}
 
@@ -135,6 +150,7 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         logger.debug(log_prefix)
         if block_number in self.blocks_cache:
             logger.debug(f"{log_prefix} - found in cache")
+            self.metrics["block_found_in_cache"] += 1
             return self.blocks_cache[block_number]
 
         block = self._get_block_from_db(block_number)

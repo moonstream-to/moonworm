@@ -1,8 +1,9 @@
+from logging import error
 import os
 import pickle
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from eth_typing.evm import ChecksumAddress
 from web3 import Web3
@@ -137,12 +138,14 @@ class FunctionCallCrawler:
         ethereum_state_provider: EthereumStateProvider,
         contract_abi: List[Dict[str, Any]],
         contract_addresses: List[ChecksumAddress],
+        on_decode_error: Optional[Callable[[Exception], None]] = None,
     ):
         self.state = state
         self.ethereum_state_provider = ethereum_state_provider
         self.contract_abi = contract_abi
         self.contract_addresses = contract_addresses
         self.contract = Web3().eth.contract(abi=self.contract_abi)
+        self.on_decode_error = on_decode_error
 
     def process_transaction(self, transaction: Dict[str, Any]):
         try:
@@ -175,6 +178,8 @@ class FunctionCallCrawler:
             self.state.register_call(function_call)
         except Exception as e:
             print(f"Failed to decode function call in tx: {transaction['hash'].hex()}")
+            if self.on_decode_error:
+                self.on_decode_error(e)
             print(e)
 
     def crawl(self, from_block: int, to_block: int, flush_state: bool = False):
