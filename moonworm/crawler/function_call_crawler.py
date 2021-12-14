@@ -1,8 +1,8 @@
-from logging import error
 import os
 import pickle
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
+from logging import error
 from typing import Any, Callable, Dict, List, Optional
 
 from eth_typing.evm import ChecksumAddress
