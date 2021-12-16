@@ -1,11 +1,14 @@
 import json
 import logging
+import os
 import pprint as pp
+import re
 import time
 from os import stat
 from re import S
 from typing import Any, Dict, List, Optional, cast
-
+from sqlalchemy.sql.expression import delete
+from web3.middleware import geth_poa_middleware
 import web3
 from eth_typing.evm import ChecksumAddress
 from moonstreamdb.db import yield_db_session_ctx
@@ -82,7 +85,7 @@ def _add_function_call_labels(
     try:
         if existing_function_call_labels:
             logger.info(
-                f"Deleting {len(existing_function_call_labels)} existing tx labels:\n{existing_function_call_labels}"
+                f"Deleting {len(existing_function_call_labels)} existing tx labels"
             )
             session.commit()
     except Exception as e:
@@ -127,6 +130,7 @@ def _add_event_labels(
     """
 
     transactions = [event["transactionHash"] for event in events]
+    log_indexes = [event["logIndex"] for event in events]
     for ev in events:
         print(ev)
     existing_event_labels = (
@@ -141,14 +145,15 @@ def _add_event_labels(
     )
 
     # deletin existing labels
+    deleted = 0
     for label in existing_event_labels:
-        session.delete(label)
+        if label.log_index in log_indexes:
+            deleted += 1
+            session.delete(label)
 
     try:
-        if existing_event_labels:
-            logger.error(
-                f"Deleting {len(existing_event_labels)} existing event labels:\n{existing_event_labels}"
-            )
+        if deleted > 0:
+            logger.error(f"Deleting {deleted} existing event labels")
             session.commit()
     except Exception as e:
         try:
@@ -203,6 +208,30 @@ class MockState(FunctionCallCrawlerState):
         Flushes cached state to storage layer.
         """
         self.state = []
+
+
+WEB3_PROVIDER_URL_1 = os.environ.get("WEB3_PROVIDER_URL_1", "")
+WEB3_PROVIDER_URL_2 = os.environ.get("WEB3_PROVIDER_URL_2", "")
+WEB3_PROVIDER_URL_3 = os.environ.get("WEB3_PROVIDER_URL_3", "")
+if WEB3_PROVIDER_URL_1 == "" or WEB3_PROVIDER_URL_2 == "" or WEB3_PROVIDER_URL_3 == "":
+    raise ValueError(
+        "Please set WEB3_PROVIDER_URL_1, WEB3_PROVIDER_URL_2, WEB3_PROVIDER_URL_3"
+    )
+
+WEB3_PROVIDER_URLS = [
+    WEB3_PROVIDER_URL_1,
+    WEB3_PROVIDER_URL_2,
+    WEB3_PROVIDER_URL_3,
+]
+CURR_INDEX = 0
+
+
+def get_web3_client():
+    global CURR_INDEX
+    CURR_INDEX = (CURR_INDEX + 1) % len(WEB3_PROVIDER_URLS)
+    web3 = Web3(Web3.HTTPProvider(WEB3_PROVIDER_URLS[CURR_INDEX]))
+    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    return web3
 
 
 def watch_cu_contract(
@@ -263,12 +292,16 @@ def watch_cu_contract(
 
         while True:
             try:
+                web3 = get_web3_client()
                 session.execute("select 1")
                 time.sleep(sleep_time)
                 end_block = min(
                     web3.eth.blockNumber - num_confirmations, current_block + 100
                 )
                 if end_block < current_block + min_blocks_to_crawl:
+                    logger.info(
+                        f"Sleeping crawling, end_block {end_block} < current_block {current_block} + min_blocks_to_crawl {min_blocks_to_crawl}"
+                    )
                     sleep_time += 1
                     continue
 
@@ -311,6 +344,7 @@ def watch_cu_contract(
                 current_block = end_block + 1
             except Exception as e:
                 logger.error(f"Something went wrong: {e}")
+                web3 = get_web3_client()
                 logger.info(f"Trying to recover from error")
                 for i in range(10):
                     logger.info(f"Attempt {i}:")

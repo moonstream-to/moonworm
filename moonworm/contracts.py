@@ -8,6 +8,7 @@ _PATHS = {
         "erc1155": "fixture/abis/OwnableERC1155.json",
         "erc721": "fixture/abis/OwnableERC721.json",
         "cu": "fixture/abis/CUContract.json",
+        "cu_land": "fixture/abis/CULands.json",
     },
     "bytecode": {
         "erc20": "fixture/bytecodes/OwnableERC20.bin",
@@ -39,3 +40,4 @@ ERC20 = MoonwormContract(_PATHS["abi"]["erc20"], _PATHS["bytecode"]["erc20"])
 ERC721 = MoonwormContract(_PATHS["abi"]["erc721"], _PATHS["bytecode"]["erc721"])
 ERC1155 = MoonwormContract(_PATHS["abi"]["erc1155"], _PATHS["bytecode"]["erc1155"])
 CU = MoonwormContract(_PATHS["abi"]["cu"], "")
+CULands = MoonwormContract(_PATHS["abi"]["cu_land"], "")
