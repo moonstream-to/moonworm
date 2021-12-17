@@ -166,6 +166,7 @@ PROTECTED_ARG_NAMES: Set[str] = {
     "gas-price",
     "gas-limit",
     "network",
+    "nonce",
     "password",
     "sender",
     "signer",
