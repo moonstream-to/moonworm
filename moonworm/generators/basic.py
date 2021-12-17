@@ -2,8 +2,7 @@ import copy
 import keyword
 import logging
 import os
-from collections import defaultdict
-from typing import Any, Dict, List, Sequence, Union, cast
+from typing import Any, cast, Dict, List, Set, Union
 
 import black
 import black.mode
@@ -157,6 +156,22 @@ def generate_contract_class(
     )
 
 
+# This is a list of names that should be modified for smart contract arguments on the command line.
+# We do this because smart contract argument names can sometimes collide with default arguments for
+# transactions (see "generate_add_default_arguments" in brownie.py for an example of default arguments).
+PROTECTED_ARG_NAMES: Set[str] = {
+    "address",
+    "chain",
+    "confirmations",
+    "gas-price",
+    "gas-limit",
+    "network",
+    "password",
+    "sender",
+    "signer",
+}
+
+
 def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     """
     Accepts function interface definitions from smart contract ABIs. An example input:
@@ -218,7 +233,11 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 
         item_method_name = normalize_abi_name(inflection.underscore(item_abi_name))
         item_args_name = item_method_name
-        if item_args_name.startswith("_") or item_args_name.endswith("_"):
+        if (
+            item_args_name.startswith("_")
+            or item_args_name.endswith("_")
+            or item_args_name in PROTECTED_ARG_NAMES
+        ):
             item_args_name = item_args_name.strip("_") + "_arg"
 
         item_cli_name = f"--{inflection.dasherize(item_args_name)}"
