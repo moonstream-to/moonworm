@@ -2,7 +2,7 @@ import copy
 import keyword
 import logging
 import os
-from typing import Any, cast, Dict, List, Set, Union
+from typing import Any, Dict, List, Set, Union, cast
 
 import black
 import black.mode
