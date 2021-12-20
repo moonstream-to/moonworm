@@ -157,6 +157,7 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         if block is None:
             logger.debug(f"{log_prefix} - not found in db or cache, fetching from web3")
             block = self.w3.eth.getBlock(block_number, full_transactions=True)
+            self.metrics["web3_get_block_calls"] += 1
         else:
             logger.debug(f"{log_prefix} - found in db")
 
