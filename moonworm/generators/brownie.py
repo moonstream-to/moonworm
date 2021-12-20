@@ -243,6 +243,20 @@ def generate_get_transaction_config() -> cst.FunctionDef:
                     'transaction_config["required_confs"] = args.confirmations'
                 ),
             ),
+            cst.If(
+                test=cst.Comparison(
+                    left=cst.Attribute(
+                        attr=cst.Name(value="nonce"),
+                        value=cst.Name(value="args"),
+                    ),
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.IsNot(), comparator=cst.Name(value="None")
+                        )
+                    ],
+                ),
+                body=cst.parse_statement('transaction_config["nonce"] = args.nonce'),
+            ),
             cst.parse_statement("return transaction_config"),
         ],
     )
@@ -482,6 +496,9 @@ def generate_add_default_arguments() -> cst.FunctionDef:
             ),
             cst.parse_statement(
                 'parser.add_argument("--confirmations", type=int, default=None, help="Number of confirmations to await before considering a transaction completed")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--nonce", type=int, default=None, help="Nonce for the transaction (optional)")'
             ),
         ],
     )
