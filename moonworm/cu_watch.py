@@ -7,15 +7,16 @@ import time
 from os import stat
 from re import S
 from typing import Any, Dict, List, Optional, cast
-from sqlalchemy.sql.expression import delete
-from web3.middleware import geth_poa_middleware
+
 import web3
 from eth_typing.evm import ChecksumAddress
 from moonstreamdb.db import yield_db_session_ctx
 from moonstreamdb.models import EthereumLabel, PolygonLabel
 from sqlalchemy.orm import Query, Session
+from sqlalchemy.sql.expression import delete
 from tqdm import tqdm
 from web3 import Web3
+from web3.middleware import geth_poa_middleware
 
 from moonworm.crawler.moonstream_ethereum_state_provider import (
     MoonstreamEthereumStateProvider,
