@@ -10,7 +10,7 @@ from web3.middleware import geth_poa_middleware
 from moonworm.crawler.ethereum_state_provider import Web3StateProvider
 from moonworm.watch import watch_contract
 
-from .contracts import CU, ERC20, ERC721
+from .contracts import CU, ERC20, ERC721, CULands
 from .crawler.networks import Network
 from .generators.basic import (
     generate_contract_cli_content,
@@ -166,7 +166,8 @@ def handle_watch_cu(args: argparse.Namespace) -> None:
         with open(args.abi, "r") as ifp:
             contract_abi = json.load(ifp)
     else:
-        contract_abi = CU.abi()
+        print("Using CULand abi since no abi is specified")
+        contract_abi = CULands.abi()
 
     web3 = Web3(Web3.HTTPProvider(args.web3))
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)
