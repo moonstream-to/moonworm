@@ -166,8 +166,8 @@ def handle_watch_cu(args: argparse.Namespace) -> None:
         with open(args.abi, "r") as ifp:
             contract_abi = json.load(ifp)
     else:
-        print("Using CULand abi since no abi is specified")
-        contract_abi = CULands.abi()
+        print("Using CUContract abi since no abi is specified")
+        contract_abi = CU.abi()
 
     web3 = Web3(Web3.HTTPProvider(args.web3))
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)

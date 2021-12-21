@@ -211,30 +211,6 @@ class MockState(FunctionCallCrawlerState):
         self.state = []
 
 
-WEB3_PROVIDER_URL_1 = os.environ.get("WEB3_PROVIDER_URL_1", "")
-WEB3_PROVIDER_URL_2 = os.environ.get("WEB3_PROVIDER_URL_2", "")
-WEB3_PROVIDER_URL_3 = os.environ.get("WEB3_PROVIDER_URL_3", "")
-if WEB3_PROVIDER_URL_1 == "" or WEB3_PROVIDER_URL_2 == "" or WEB3_PROVIDER_URL_3 == "":
-    raise ValueError(
-        "Please set WEB3_PROVIDER_URL_1, WEB3_PROVIDER_URL_2, WEB3_PROVIDER_URL_3"
-    )
-
-WEB3_PROVIDER_URLS = [
-    WEB3_PROVIDER_URL_1,
-    WEB3_PROVIDER_URL_2,
-    WEB3_PROVIDER_URL_3,
-]
-CURR_INDEX = 0
-
-
-def get_web3_client():
-    global CURR_INDEX
-    CURR_INDEX = (CURR_INDEX + 1) % len(WEB3_PROVIDER_URLS)
-    web3 = Web3(Web3.HTTPProvider(WEB3_PROVIDER_URLS[CURR_INDEX]))
-    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-    return web3
-
-
 def watch_cu_contract(
     web3: Web3,
     contract_address: ChecksumAddress,
@@ -293,7 +269,6 @@ def watch_cu_contract(
 
         while True:
             try:
-                web3 = get_web3_client()
                 session.execute("select 1")
                 time.sleep(sleep_time)
                 end_block = min(
@@ -345,7 +320,6 @@ def watch_cu_contract(
                 current_block = end_block + 1
             except Exception as e:
                 logger.error(f"Something went wrong: {e}")
-                web3 = get_web3_client()
                 logger.info(f"Trying to recover from error")
                 for i in range(10):
                     logger.info(f"Attempt {i}:")
