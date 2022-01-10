@@ -81,7 +81,7 @@ def watch_contract(
 
         sleep_time /= 2
 
-        # crawler.crawl(current_block, end_block)
+        crawler.crawl(current_block, end_block)
         if state.state:
             print("Got transaction calls:")
             for call in state.state:
