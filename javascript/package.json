@@ -25,6 +25,9 @@
   },
   "homepage": "https://github.com/bugout-dev/moonworm#readme",
   "devDependencies": {
+    "@babel/core": "^7.16.10",
+    "@babel/generator": "^7.16.8",
+    "@types/babel__generator": "^7.6.4",
     "@types/mocha": "^9.0.0",
     "@types/node": "^17.0.9",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
