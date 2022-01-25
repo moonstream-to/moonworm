@@ -72,6 +72,7 @@ def generate_brownie_contract_class(
         + [
             generate_brownie_constructor_function(contract_constructor),
             generate_assert_contract_is_instantiated(),
+            generate_verify_contract(),
         ]
         + [
             generate_brownie_contract_function(function)
@@ -122,6 +123,24 @@ def generate_brownie_constructor_function(
         name=cst.Name(func_name),
         params=cst.Parameters(params=func_params),
         body=func_body,
+    )
+
+
+def generate_verify_contract() -> cst.FunctionDef:
+    func_name = "verify_contract"
+    func_params = [cst.Param(name=cst.Name("self"))]
+    func_body = cst.IndentedBlock(
+        body=[
+            cst.parse_statement("self.assert_contract_is_instantiated()"),
+            cst.parse_statement(
+                f"contract_class = contract_from_build(self.contract_name)"
+            ),
+            cst.parse_statement("contract_class.publish_source(self.contract)"),
+        ]
+    )
+
+    return cst.FunctionDef(
+        name=cst.Name(func_name), params=cst.Parameters(func_params), body=func_body
     )
 
 
@@ -376,6 +395,64 @@ def generate_deploy_handler(
     return function_def
 
 
+def generate_verify_contract_handler(contract_name: str) -> Optional[cst.FunctionDef]:
+    """
+    Generates a handler which deploys the given contract to the specified blockchain using the constructor
+    with the given signature.
+    """
+    function_body_raw: List[cst.CSTNode] = []
+
+    # Instantiate the contract
+    function_body_raw.extend(
+        [
+            cst.parse_statement("network.connect(args.network)"),
+            cst.parse_statement(f"contract = {contract_name}(args.address)"),
+        ]
+    )
+
+    method_call = cst.Call(
+        func=cst.Attribute(
+            attr=cst.Name(value="verify_contract"),
+            value=cst.Name(value="contract"),
+        ),
+        args=[],
+    )
+
+    method_call_result_statement = cst.SimpleStatementLine(
+        body=[
+            cst.Assign(
+                targets=[cst.AssignTarget(target=cst.Name(value="result"))],
+                value=method_call,
+            )
+        ]
+    )
+    function_body_raw.append(method_call_result_statement)
+
+    function_body_raw.append(cst.parse_statement("print(result)"))
+
+    function_body = cst.IndentedBlock(body=function_body_raw)
+
+    function_def = cst.FunctionDef(
+        name=cst.Name(value=f"handle_verify_contract"),
+        params=cst.Parameters(
+            params=[
+                cst.Param(
+                    name=cst.Name(value="args"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Attribute(
+                            attr=cst.Name(value="Namespace"),
+                            value=cst.Name(value="argparse"),
+                        )
+                    ),
+                )
+            ],
+        ),
+        body=function_body,
+        returns=cst.Annotation(annotation=cst.Name(value="None")),
+    )
+    return function_def
+
+
 def generate_cli_handler(
     function_abi: Dict[str, Any], contract_name: str
 ) -> Optional[cst.FunctionDef]:
@@ -549,7 +626,14 @@ def generate_cli_generator(
     constructor_abi["name"] = "deploy"
     constructor_spec = function_spec(constructor_abi)
 
-    specs: List[Dict[str, Any]] = [constructor_spec]
+    verify_contract_spec = {
+        "method": "verify_contract",
+        "cli": "verify-contract",
+        "transact": False,
+        "inputs": [],
+    }
+
+    specs: List[Dict[str, Any]] = [constructor_spec, verify_contract_spec]
     specs.extend([function_spec(item) for item in abi if item["type"] == "function"])
 
     for spec in specs:
@@ -683,10 +767,12 @@ def generate_brownie_cli(
     get_transaction_config_function = generate_get_transaction_config()
     add_default_arguments_function = generate_add_default_arguments()
     add_deploy_handler = generate_deploy_handler(get_constructor(abi), contract_name)
+    add_verify_contract_handler = generate_verify_contract_handler(contract_name)
     handlers = [
         get_transaction_config_function,
         add_default_arguments_function,
         add_deploy_handler,
+        add_verify_contract_handler,
     ]
     handlers.extend(
         [
