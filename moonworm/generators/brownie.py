@@ -249,6 +249,38 @@ def generate_get_transaction_config() -> cst.FunctionDef:
             cst.If(
                 test=cst.Comparison(
                     left=cst.Attribute(
+                        attr=cst.Name(value="max_fee_per_gas"),
+                        value=cst.Name(value="args"),
+                    ),
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.IsNot(), comparator=cst.Name(value="None")
+                        )
+                    ],
+                ),
+                body=cst.parse_statement(
+                    'transaction_config["max_fee"] = args.max_fee_per_gas'
+                ),
+            ),
+            cst.If(
+                test=cst.Comparison(
+                    left=cst.Attribute(
+                        attr=cst.Name(value="max_priority_fee_per_gas"),
+                        value=cst.Name(value="args"),
+                    ),
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.IsNot(), comparator=cst.Name(value="None")
+                        )
+                    ],
+                ),
+                body=cst.parse_statement(
+                    'transaction_config["priority_fee"] = args.max_priority_fee_per_gas'
+                ),
+            ),
+            cst.If(
+                test=cst.Comparison(
+                    left=cst.Attribute(
                         attr=cst.Name(value="confirmations"),
                         value=cst.Name(value="args"),
                     ),
@@ -570,6 +602,12 @@ def generate_add_default_arguments() -> cst.FunctionDef:
             ),
             cst.parse_statement(
                 'parser.add_argument("--gas-price", default=None, help="Gas price at which to submit transaction")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--max-fee-per-gas", default=None, help="Max fee per gas for EIP1559 transactions")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--max-priority-fee-per-gas", default=None, help="Max priority fee per gas for EIP1559 transactions")'
             ),
             cst.parse_statement(
                 'parser.add_argument("--confirmations", type=int, default=None, help="Number of confirmations to await before considering a transaction completed")'
