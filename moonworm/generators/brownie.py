@@ -249,7 +249,8 @@ def generate_get_transaction_config() -> cst.FunctionDef:
             cst.If(
                 test=cst.Comparison(
                     left=cst.Attribute(
-                        attr=cst.Name(value="max_fee_per_gas"), value=cst.Name(value="args")
+                        attr=cst.Name(value="max_fee_per_gas"),
+                        value=cst.Name(value="args"),
                     ),
                     comparisons=[
                         cst.ComparisonTarget(
@@ -264,7 +265,8 @@ def generate_get_transaction_config() -> cst.FunctionDef:
             cst.If(
                 test=cst.Comparison(
                     left=cst.Attribute(
-                        attr=cst.Name(value="max_priority_fee_per_gas"), value=cst.Name(value="args")
+                        attr=cst.Name(value="max_priority_fee_per_gas"),
+                        value=cst.Name(value="args"),
                     ),
                     comparisons=[
                         cst.ComparisonTarget(
