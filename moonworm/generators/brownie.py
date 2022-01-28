@@ -615,6 +615,9 @@ def generate_add_default_arguments() -> cst.FunctionDef:
             cst.parse_statement(
                 'parser.add_argument("--nonce", type=int, default=None, help="Nonce for the transaction (optional)")'
             ),
+            cst.parse_statement(
+                'parser.add_argument("--value", default=None, help="Value of the transaction in wei(optional)")'
+            ),
         ],
     )
     function_def = cst.FunctionDef(
