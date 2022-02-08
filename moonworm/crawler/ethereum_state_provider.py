@@ -8,6 +8,10 @@ from web3 import Web3
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Suppress INFO logs from black str parser
+black_logger = logging.getLogger("blib2to3")
+black_logger.setLevel("WARN")
+
 
 class EthereumStateProvider(ABC):
     """
