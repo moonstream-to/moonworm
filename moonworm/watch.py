@@ -1,3 +1,6 @@
+import dataclasses
+from csv import DictWriter
+import os
 import pprint as pp
 import time
 from typing import Any, Dict, List, Optional
@@ -22,6 +25,12 @@ from .crawler.log_scanner import _fetch_events_chunk
 class MockState(FunctionCallCrawlerState):
     def __init__(self) -> None:
         self.state: List[ContractFunctionCall] = []
+        self.outfile: Optional[str] = None
+
+    def set_outfile(self, outfile_path: str) -> None:
+        if not os.path.isfile(outfile_path):
+            os.mknod(outfile_path)
+        self.outfile = outfile_path
 
     def get_last_crawled_block(self) -> int:
         """
@@ -39,6 +48,12 @@ class MockState(FunctionCallCrawlerState):
         """
         Flushes cached state to storage layer.
         """
+        if self.outfile is not None:
+            state = [dataclasses.asdict(s) for s in self.state]
+            with open(self.outfile, "a") as ofp:
+                writer = DictWriter(ofp, fieldnames=[*state[0]])
+                writer.writerows(state)
+
         self.state = []
 
 
@@ -51,6 +66,7 @@ def watch_contract(
     num_confirmations: int = 10,
     sleep_time: float = 1,
     start_block: Optional[int] = None,
+    outfile: Optional[str] = None,
 ) -> None:
     """
     Watches a contract for events and calls.
@@ -62,6 +78,9 @@ def watch_contract(
         contract_abi,
         [web3.toChecksumAddress(contract_address)],
     )
+
+    if outfile is not None:
+        state.set_outfile(outfile)
 
     event_abis = [item for item in contract_abi if item["type"] == "event"]
 
