@@ -88,6 +88,25 @@ def handle_brownie_generate(args: argparse.Namespace):
     project_directory = args.project
     build_directory = os.path.join(project_directory, "build", "contracts")
 
+    if not args.name:
+
+        for file in os.listdir(build_directory):
+            filename = os.fsdecode(file)
+
+            if filename.endswith(".json"):
+                args.name = os.path.splitext(filename)[0]
+                handle_brownie_generate_file(args)
+    else:
+        handle_brownie_generate_file(args)
+
+
+def handle_brownie_generate_file(args: argparse.Namespace):
+
+    Path(args.outdir).mkdir(exist_ok=True)
+
+    project_directory = args.project
+    build_directory = os.path.join(project_directory, "build", "contracts")
+
     build_file_path = os.path.join(build_directory, f"{args.name}.json")
     if not os.path.isfile(build_file_path):
         raise IOError(
@@ -303,8 +322,8 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     generate_brownie_parser.add_argument(
         "--name",
         "-n",
-        required=True,
-        help="Prefix name for generated files",
+        required=False,
+        help="Prefix name for generated files (optional, if not specified will regenerate all)",
     )
     generate_brownie_parser.add_argument(
         "-p",
