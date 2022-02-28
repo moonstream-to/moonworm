@@ -138,6 +138,7 @@ def handle_watch(args: argparse.Namespace) -> None:
                     contract_abi=contract_abi,
                     num_confirmations=args.confirmations,
                     start_block=args.start,
+                    outfile=args.outfile,
                 )
             finally:
                 state_provider.clear_db_session()
@@ -242,6 +243,13 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         default=15,
         type=int,
         help="Number of confirmations to wait for. Default=12",
+    )
+
+    watch_parser.add_argument(
+        "-o",
+        "--outfile",
+        default=None,
+        help="Optional JSONL (JsON lines) file into which to write events and method calls",
     )
 
     watch_parser.set_defaults(func=handle_watch)
