@@ -152,6 +152,7 @@ def handle_watch(args: argparse.Namespace) -> None:
             contract_abi=contract_abi,
             num_confirmations=args.confirmations,
             start_block=args.start,
+            outfile=args.outfile,
         )
 
 

@@ -94,7 +94,8 @@ def watch_contract(
                 print("Got transaction calls:")
                 for call in state.state:
                     pp.pprint(call, width=200, indent=4)
-                    json.dump(asdict(call), ofp)
+                    if ofp is not None:
+                        print(json.dumps(asdict(call)), file=ofp)
                 state.flush()
 
             for event_abi in event_abis:
@@ -108,7 +109,8 @@ def watch_contract(
                 for event in all_events:
                     print("Got event:")
                     pp.pprint(event, width=200, indent=4)
-                    json.dump(event, ofp)
+                    if ofp is not None:
+                        print(json.dumps(event), file=ofp)
 
             progress_bar.set_description(
                 f"Current block {end_block}, Already watching for"
@@ -116,4 +118,5 @@ def watch_contract(
             progress_bar.update(end_block - current_block + 1)
             current_block = end_block + 1
     finally:
-        ofp.close()
+        if ofp is not None:
+            ofp.close()
