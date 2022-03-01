@@ -1,7 +1,7 @@
-from dataclasses import asdict
 import json
 import pprint as pp
 import time
+from dataclasses import asdict
 from typing import Any, Dict, List, Optional
 
 from eth_typing.evm import ChecksumAddress
@@ -96,6 +96,7 @@ def watch_contract(
                     pp.pprint(call, width=200, indent=4)
                     if ofp is not None:
                         print(json.dumps(asdict(call)), file=ofp)
+                        ofp.flush()
                 state.flush()
 
             for event_abi in event_abis:
@@ -111,6 +112,7 @@ def watch_contract(
                     pp.pprint(event, width=200, indent=4)
                     if ofp is not None:
                         print(json.dumps(event), file=ofp)
+                        ofp.flush()
 
             progress_bar.set_description(
                 f"Current block {end_block}, Already watching for"
