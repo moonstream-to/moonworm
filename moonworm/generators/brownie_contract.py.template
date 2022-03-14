@@ -28,8 +28,11 @@ def boolean_argument_type(raw_value: str) -> bool:
         f"Invalid boolean argument: {{raw_value}}. Value must be one of: {{','.join(TRUE_VALUES + FALSE_VALUES)}}"
     )
 
-def bytes_argument_type(raw_value: str) -> bytes:
-    return raw_value.encode()
+def bytes_argument_type(raw_value: str) -> Union[str, bytes]:
+    # Have had issues with empty string in the past. Easier to convert it to empty byte string
+    if raw_value == "":
+        return b""
+    return raw_value
 
 def get_abi_json(abi_name: str) -> List[Dict[str, Any]]:
     abi_full_path = os.path.join(BUILD_DIRECTORY, f"{{abi_name}}.json")
