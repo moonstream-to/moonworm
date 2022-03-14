@@ -1,8 +1,9 @@
+import json
 import pprint as pp
 import time
+from dataclasses import asdict
 from typing import Any, Dict, List, Optional
 
-import web3
 from eth_typing.evm import ChecksumAddress
 from tqdm import tqdm
 from web3 import Web3
@@ -51,6 +52,7 @@ def watch_contract(
     num_confirmations: int = 10,
     sleep_time: float = 1,
     start_block: Optional[int] = None,
+    outfile: Optional[str] = None,
 ) -> None:
     """
     Watches a contract for events and calls.
@@ -72,34 +74,51 @@ def watch_contract(
 
     progress_bar = tqdm(unit=" blocks")
     progress_bar.set_description(f"Current block {current_block}")
-    while True:
-        time.sleep(sleep_time)
-        end_block = min(web3.eth.blockNumber - num_confirmations, current_block + 100)
-        if end_block < current_block:
-            sleep_time *= 2
-            continue
-
-        sleep_time /= 2
-
-        crawler.crawl(current_block, end_block)
-        if state.state:
-            print("Got transaction calls:")
-            for call in state.state:
-                pp.pprint(call, width=200, indent=4)
-            state.flush()
-
-        for event_abi in event_abis:
-            all_events = _fetch_events_chunk(
-                web3,
-                event_abi,
-                current_block,
-                end_block,
-                [contract_address],
+    ofp = None
+    if outfile is not None:
+        ofp = open(outfile, "a")
+    try:
+        while True:
+            time.sleep(sleep_time)
+            end_block = min(
+                web3.eth.blockNumber - num_confirmations, current_block + 100
             )
-            for event in all_events:
-                print("Got event:")
-                pp.pprint(event, width=200, indent=4)
+            if end_block < current_block:
+                sleep_time *= 2
+                continue
 
-        progress_bar.set_description(f"Current block {end_block}, Already watching for")
-        progress_bar.update(end_block - current_block + 1)
-        current_block = end_block + 1
+            sleep_time /= 2
+
+            crawler.crawl(current_block, end_block)
+            if state.state:
+                print("Got transaction calls:")
+                for call in state.state:
+                    pp.pprint(call, width=200, indent=4)
+                    if ofp is not None:
+                        print(json.dumps(asdict(call)), file=ofp)
+                        ofp.flush()
+                state.flush()
+
+            for event_abi in event_abis:
+                all_events = _fetch_events_chunk(
+                    web3,
+                    event_abi,
+                    current_block,
+                    end_block,
+                    [contract_address],
+                )
+                for event in all_events:
+                    print("Got event:")
+                    pp.pprint(event, width=200, indent=4)
+                    if ofp is not None:
+                        print(json.dumps(event), file=ofp)
+                        ofp.flush()
+
+            progress_bar.set_description(
+                f"Current block {end_block}, Already watching for"
+            )
+            progress_bar.update(end_block - current_block + 1)
+            current_block = end_block + 1
+    finally:
+        if ofp is not None:
+            ofp.close()
