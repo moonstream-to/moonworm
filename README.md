@@ -7,7 +7,8 @@ Moonworm is a set of tools that helps you develop/analyze blockchain dapps. Pump
 1. `moonworm watch` -  Tool to monitor and crawl(index) decoded smart contract data. It gets you historic/on going smart contract’s decoded `events` and `transactions`. No sweat, just provide `abi` and smart contract’s address and get stream of data. With this tool you can: analyze  incidents, set up alerting, build datasets, write sniping bots, etc.
 2. `moonworm generate-brownie` - Brownie on steroids. Generate python interface and cli for your smart contracts in “one click”, focus on smart contract development, `moonworm` will do the rest. In addition, you will have syntax highlights which will boost your speed on writing tests.
 
-![moonworm.jpg](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/501badf8-c3fa-4f12-9f95-952004e4d249/moonworm.jpg)
+![moonworm](https://user-images.githubusercontent.com/19771534/164013435-74a9e816-74ef-4e05-a7e5-1f7f620896e7.jpg)
+
 
 1. `moonworm generate` - cli/ python interface generator for pure `web3` library. In case you prefer not to use `brownie`
 
