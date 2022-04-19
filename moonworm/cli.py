@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from shutil import copyfile
 
@@ -12,6 +13,7 @@ from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721, CULands
 from .crawler.networks import Network
+from .deployment import find_deployment_block
 from .generators.basic import (
     generate_contract_cli_content,
     generate_contract_interface_content,
@@ -138,6 +140,7 @@ def handle_watch(args: argparse.Namespace) -> None:
                     contract_abi=contract_abi,
                     num_confirmations=args.confirmations,
                     start_block=args.start,
+                    end_block=args.end,
                     outfile=args.outfile,
                 )
             finally:
@@ -152,6 +155,7 @@ def handle_watch(args: argparse.Namespace) -> None:
             contract_abi=contract_abi,
             num_confirmations=args.confirmations,
             start_block=args.start,
+            end_block=args.end,
             outfile=args.outfile,
         )
 
@@ -182,6 +186,16 @@ def handle_watch_cu(args: argparse.Namespace) -> None:
         start_block=args.deployment_block,
         force_start=args.force,
     )
+
+
+def handle_find_deployment(args: argparse.Namespace) -> None:
+    web3_client = Web3(Web3.HTTPProvider(args.web3))
+    result = find_deployment_block(web3_client, args.contract, args.interval)
+    if result is None:
+        raise ValueError(
+            f"Address does not represent a smart contract: {args.contract}"
+        )
+    print(result)
 
 
 def generate_argument_parser() -> argparse.ArgumentParser:
@@ -231,6 +245,14 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Block number to start watching from",
+    )
+
+    watch_parser.add_argument(
+        "--end",
+        "-e",
+        type=int,
+        default=None,
+        help="Block number at which to end watching",
     )
 
     watch_parser.add_argument(
@@ -363,6 +385,33 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         help="Force rewrite generated files",
     )
     generate_parser.set_defaults(func=handle_generate)
+
+    find_deployment_parser = subcommands.add_parser(
+        "find-deployment",
+        description="Find the block where a smart contract was deployed",
+    )
+    find_deployment_parser.add_argument(
+        "-w",
+        "--web3",
+        required=True,
+        help="Web3 provider",
+    )
+    find_deployment_parser.add_argument(
+        "-c",
+        "--contract",
+        type=Web3.toChecksumAddress,
+        required=True,
+        help="Contract address",
+    )
+    find_deployment_parser.add_argument(
+        "-t",
+        "--interval",
+        type=float,
+        default=1.0,
+        help="Number of seconds (float) to wait between web3 calls",
+    )
+    find_deployment_parser.set_defaults(func=handle_find_deployment)
+
     return parser
 
 
