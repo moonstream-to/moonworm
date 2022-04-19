@@ -14,7 +14,7 @@ Moonworm is a set of tools that helps you develop/analyze blockchain dapps. Pump
 
 ## Setup:
 
-```sql
+```bash
 pip install moonworm 
 ```
 
@@ -33,15 +33,18 @@ Arguments:
 - `--contract/-c CONTRACT` Contract address
 - `--web3/-w WEB3`    Web3 provider uri
 - `--start/-s START`  block to start watching
-- `--end/-e END`      block to stop crawling, if not given, crawler will not stop
 
 Optional args:
-
+- `--end/-e END`      block to stop crawling, if not given, crawler will not stop
 - `--poa` Flag for `PoA` networks, for example `polygon`
 - `--confirmations CONFIRMATIONS`  Number of confirmations to set for watch. (Default 12)
 - `--outfile/-o OUTFILE`  `JSONL` file into which to write events and transactions
 - `--db`  Use Moonstream database specified by `MOONSTREAM_DB_URI` to get blocks/transactions. If set, need also provide `--network`
 - `-network {ethereum,polygon}`Network name that represents models from db. If the `--db` is set, required
+- `--only-events` Flag, if set: only watches events. Default=`False`
+- `--min-blocks-batch MIN_BLOCKS_BATCH` Minimum number of blocks to batch together. Default=100
+- `--max-blocks-batch MAX_BLOCKS_BATCH` Maximum number of blocks to batch together. Default=1000 **Note**: it is used only in `--only-events` mode
+- 
 
 ### `moonworm generate-brownie`:
 

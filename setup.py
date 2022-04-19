@@ -19,7 +19,7 @@ setup(
         "pysha3<2.0.0,>=1.0.0",
         "tqdm",
         "typing-extensions<4,>=3.7.4",
-        "web3[tester]",
+        "web3[tester] >=5.29.0",
     ],
     extras_require={
         "dev": [
