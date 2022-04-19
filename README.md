@@ -24,7 +24,7 @@ pip install moonworm
 ### `moonworm watch`:
 
 ```bash
-moonworm watch --abi <Path to abi file> --contract <Contract address> --web3 <Web3 provider url> --start <Start block>     
+moonworm watch --abi <Path to abi file> --contract <Contract address> --web3 <Web3 provider url> --start <Start block> --end <End block>    
 ```
 
 Arguments:
@@ -33,6 +33,7 @@ Arguments:
 - `--contract/-c CONTRACT` Contract address
 - `--web3/-w WEB3`    Web3 provider uri
 - `--start/-s START`  block to start watching
+- `--end/-e END`      block to stop crawling, if not given, crawler will not stop
 
 Optional args:
 
