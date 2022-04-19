@@ -203,9 +203,6 @@ def handle_find_deployment(args: argparse.Namespace) -> None:
     print(result)
 
 
-# def handle_main_parset(args:argparse.Namespace) -> None:
-
-
 def generate_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Moonworm: Manage your smart contract")
     parser.add_argument(
