@@ -52,6 +52,7 @@ def watch_contract(
     num_confirmations: int = 10,
     sleep_time: float = 1,
     start_block: Optional[int] = None,
+    end_block: Optional[int] = None,
     outfile: Optional[str] = None,
 ) -> None:
     """
@@ -77,19 +78,22 @@ def watch_contract(
     ofp = None
     if outfile is not None:
         ofp = open(outfile, "a")
+
     try:
-        while True:
+        while end_block is None or current_block <= end_block:
             time.sleep(sleep_time)
-            end_block = min(
+            until_block = min(
                 web3.eth.blockNumber - num_confirmations, current_block + 100
             )
-            if end_block < current_block:
+            if end_block is not None:
+                until_block = min(until_block, end_block)
+            if until_block < current_block:
                 sleep_time *= 2
                 continue
 
             sleep_time /= 2
 
-            crawler.crawl(current_block, end_block)
+            crawler.crawl(current_block, until_block)
             if state.state:
                 print("Got transaction calls:")
                 for call in state.state:
@@ -104,7 +108,7 @@ def watch_contract(
                     web3,
                     event_abi,
                     current_block,
-                    end_block,
+                    until_block,
                     [contract_address],
                 )
                 for event in all_events:
@@ -115,10 +119,10 @@ def watch_contract(
                         ofp.flush()
 
             progress_bar.set_description(
-                f"Current block {end_block}, Already watching for"
+                f"Current block {until_block}, Already watching for"
             )
-            progress_bar.update(end_block - current_block + 1)
-            current_block = end_block + 1
+            progress_bar.update(until_block - current_block + 1)
+            current_block = until_block + 1
     finally:
         if ofp is not None:
             ofp.close()
