@@ -1,7 +1,7 @@
 import argparse
 import json
-from multiprocessing.sharedctypes import Value
 import os
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from shutil import copyfile
 
@@ -13,12 +13,12 @@ from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721, CULands
 from .crawler.networks import Network
+from .deployment import find_deployment_block
 from .generators.basic import (
     generate_contract_cli_content,
     generate_contract_interface_content,
 )
 from .generators.brownie import generate_brownie_interface
-from .deployment import find_deployment_block
 
 
 def write_file(content: str, path: str):
