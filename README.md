@@ -1,84 +1,93 @@
-# Moonworm
-Generate command line and a python interface to any Ethereum smart contract
+## What is moonworm?
 
-# Installation
-### from pip:
-`pip install moonworm`
+Moonworm is a set of tools that helps you develop/analyze blockchain dapps. Pump your productivity to the Moon.
 
-### from github:
-`git clone https://github.com/bugout-dev/moonworm.git`
+### Tools:
 
-`cd moonworm/`
+1. `moonworm watch` -  Tool to monitor and crawl(index) decoded smart contract data. It gets you historic/on going smart contract’s decoded `events` and `transactions`. No sweat, just provide `abi` and smart contract’s address and get stream of data. With this tool you can: analyze  incidents, set up alerting, build datasets, write sniping bots, etc.
+2. `moonworm generate-brownie` - Brownie on steroids. Generate python interface and cli for your smart contracts in “one click”, focus on smart contract development, `moonworm` will do the rest. In addition, you will have syntax highlights which will boost your speed on writing tests.
 
-create virtual env: `python3 -m venv .venv`
+![moonworm](https://user-images.githubusercontent.com/19771534/164013435-74a9e816-74ef-4e05-a7e5-1f7f620896e7.jpg)
 
-activate virtual env: `source .venv/bin/activate`
 
-install: `python3 -m setup.py install`
+1. `moonworm generate` - cli/ python interface generator for pure `web3` library. In case you prefer not to use `brownie`
 
-# Usage
-## Requirements:
-### In order to have ability to deploy/transact smart contracts:
-1. Have an Ethereum account for testing purposes. Create one with [metamask](https://metamask.io/) if you don't have
-2. Have access to Ethereum node (to testnet like Ropsten for testing purposes). Create [Infura accaunt](https://infura.io/) account if you don't have, it is free
-3. Some ether to use in your account. Use [Ropsten faucet](https://faucet.ropsten.be/) to get some ether in ropsten testnet
+## Setup:
 
-## Generating cli and python interface:
-
-### To generate interfaces for moonworm [token contracts](https://github.com/bugout-dev/moonworm/tree/main/moonworm/fixture/smart_contracts):
-**ERC20:** 
-```bash 
-moonworm generate --cli --interface -o generated/ --name erc20 --abi erc20
+```sql
+pip install moonworm 
 ```
-**ERC721:**
-```bash 
-moonworm generate --cli --interface -o generated/ --name erc721 --abi erc721
-```
-### To generate from given contract abi:
-```bash 
-moonworm generate --cli --interface -o generated/ --name <Give a name> --abi <Path to abi>
-```
-**Note:** abi should be `.json` file
 
-## Example of interacting with generated files:
-Export `MOONWORM_WEB3_PROVIDER_URI` variable to environment 
+
+## Usage:
+
+### `moonworm watch`:
+
 ```bash
-export MOONWORM_WEB3_PROVIDER_URI="<Web3 provider uri>"
+moonworm watch --abi <Path to abi file> --contract <Contract address> --web3 <Web3 provider url> --start <Start block> --end <End block>    
 ```
 
-In case you are using Infura:
+Arguments:
+
+- `--abi/-i ABI`    Path to abi file
+- `--contract/-c CONTRACT` Contract address
+- `--web3/-w WEB3`    Web3 provider uri
+- `--start/-s START`  block to start watching
+- `--end/-e END`      block to stop crawling, if not given, crawler will not stop
+
+Optional args:
+
+- `--poa` Flag for `PoA` networks, for example `polygon`
+- `--confirmations CONFIRMATIONS`  Number of confirmations to set for watch. (Default 12)
+- `--outfile/-o OUTFILE`  `JSONL` file into which to write events and transactions
+- `--db`  Use Moonstream database specified by `MOONSTREAM_DB_URI` to get blocks/transactions. If set, need also provide `--network`
+- `-network {ethereum,polygon}`Network name that represents models from db. If the `--db` is set, required
+
+### `moonworm generate-brownie`:
+
 ```bash
-export MOONWORM_WEB3_PROVIDER_URI="https://ropsten.infura.io/v3/<Your infura project id>"
+moonworm generate-brownie -p <Path to brownie project> -o <Outdir where file will be generated> -n <Contract name>
 ```
 
-1. Generate erc20 token interface as shown above
-2. Run `python3 -m generated.erc20_cli -h` to make sure you have generated files correctly
-3. Let's deploy : 
-    ``` bash 
-    python3 -m generated.erc20_cli deploy <Token name> <Token sumbol> <Token owner> -b generated/erc20_bytecode.bin
-    ```
-    * `<Token name>` - Name of the token
-    * `<Token symbol>` - Symbol of the token
-    * `<Token owner>` - Owner of token, who has ability to mint new tokens. Put your address here
-    
-    It will ask your account `private key` in order to submit deployment transaction.
-    It will deploy contract and give you your contract address if everything goes well
-4. Check if conract deployed: 
-    ``` bash
-    python3 -m generated.erc20_cli call name -c <Deployed contract address>
-    ```
-    
-   It should print name of token.
-5. Let's mint some tokens to your address:
-    ``` bash
-    python3 -m generated.erc20_cli transact mint <Your address> <Amount of token to mint> -c <Deployed contract address>
-    ```
-    
-    It will ask your `private key` and confirmation to send transaction.
-    
-6. Let's transfer some tokens:
-    You can send me some tokens:
-    ``` bash
-    python3 -m generated.erc20_cli transact transfer 0xa75720c500ae1551c08074E5A9849EA92528401D <Amount of token to transfer> -c <Deployed contract address>
-    ```
+Arguments:
 
+- `--project/-p PROJECT`  path to brownie project.
+- `--outdir/-o OUTDIR` Output directory where files will be generated.
+- `--name/-n NAME` Prefix name for generated files
+
+**NOTE**: For better experience put generated files in sub directory of your brownie project. As an example:
+
+1. `cd myBrownieProject`
+2. `moonworm generate-brownie -p . -o generated/ -n MyContract` 
+
+      3. Run the generated cli of the contract: `python3 generated/Mycontract.py -h` 
+
+### `moonworm generate`:
+
+```bash
+moonworm generate --abi <Path to abi> -o <Outdir> --interface --cli --name <Prefix name for the generated files>
+```
+
+Arguments:
+
+- `--abi/-i ABI` Path to contract abi JSON file
+- `--outdir/-o OUTDIR` Output directory where files will be generated.
+- `--interface` Flag to generate python interface for given smart contract abi
+- `-name/-n NAME` Prefix name for generated files
+- `--cli` Flag to generate cli for given smart contract abi
+
+ 
+
+## FAQ:
+
+- Ser, is it safe to use?
+
+     Yes, it is. moonworm is a code generator that generates code that uses brownie/web3.
+
+- Ok ser, are there examples of usages?
+
+     [moonstream-dao contracts](https://github.com/bugout-dev/dao/tree/main/dao), [lootbox contract](https://github.com/bugout-dev/lootbox/tree/main/lootbox)
+
+- But ser, I don’t write on python
+
+     Javascript version (hardhat) is coming soon
