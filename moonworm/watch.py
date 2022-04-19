@@ -2,7 +2,7 @@ import json
 import pprint as pp
 import time
 from dataclasses import asdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from eth_typing.evm import ChecksumAddress
 from tqdm import tqdm
@@ -53,11 +53,51 @@ def watch_contract(
     sleep_time: float = 1,
     start_block: Optional[int] = None,
     end_block: Optional[int] = None,
+    min_blocks_batch: int = 100,
+    max_blocks_batch: int = 5000,
+    batch_size_update_threshold: int = 100,
+    only_events: bool = False,
     outfile: Optional[str] = None,
 ) -> None:
     """
     Watches a contract for events and calls.
     """
+
+    def _crawl_events(
+        event_abi, from_block: int, to_block: int, batch_size: int
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        """
+        Crawls events from the given block range.
+        reduces the batch_size if response is failing.
+        increases the batch_size if response is successful.
+        """
+        events = []
+        current_from_block = from_block
+
+        while current_from_block <= to_block:
+            current_to_block = min(current_from_block + batch_size, to_block)
+            print(f"From block: {current_from_block}, to block: {current_to_block}")
+            try:
+                events_chunk = _fetch_events_chunk(
+                    web3,
+                    event_abi,
+                    current_from_block,
+                    current_to_block,
+                    [contract_address],
+                    on_decode_error=lambda e: print(e),
+                )
+                events.extend(events_chunk)
+                current_from_block = current_to_block + 1
+                if len(events) <= batch_size_update_threshold:
+                    batch_size = min(batch_size * 2, max_blocks_batch)
+            except Exception as e:
+                if batch_size <= min_blocks_batch:
+                    raise e
+                time.sleep(0.1)
+                batch_size = max(batch_size // 2, min_blocks_batch)
+        return events, batch_size
+
+    current_batch_size = min_blocks_batch
     state = MockState()
     crawler = FunctionCallCrawler(
         state,
@@ -83,7 +123,8 @@ def watch_contract(
         while end_block is None or current_block <= end_block:
             time.sleep(sleep_time)
             until_block = min(
-                web3.eth.blockNumber - num_confirmations, current_block + 100
+                web3.eth.blockNumber - num_confirmations,
+                current_block + current_batch_size,
             )
             if end_block is not None:
                 until_block = min(until_block, end_block)
@@ -92,25 +133,31 @@ def watch_contract(
                 continue
 
             sleep_time /= 2
-
-            crawler.crawl(current_block, until_block)
-            if state.state:
-                print("Got transaction calls:")
-                for call in state.state:
-                    pp.pprint(call, width=200, indent=4)
-                    if ofp is not None:
-                        print(json.dumps(asdict(call)), file=ofp)
-                        ofp.flush()
-                state.flush()
+            if not only_events:
+                crawler.crawl(current_block, until_block)
+                if state.state:
+                    print("Got transaction calls:")
+                    for call in state.state:
+                        pp.pprint(call, width=200, indent=4)
+                        if ofp is not None:
+                            print(json.dumps(asdict(call)), file=ofp)
+                            ofp.flush()
+                    state.flush()
 
             for event_abi in event_abis:
-                all_events = _fetch_events_chunk(
-                    web3,
-                    event_abi,
-                    current_block,
-                    until_block,
-                    [contract_address],
+                all_events, new_batch_size = _crawl_events(
+                    event_abi, current_block, until_block, current_batch_size
                 )
+                # TODO: remove
+                if all_events:
+                    print("Got events:")
+                else:
+                    print("No events")
+
+                if only_events:
+                    # Updating batch size only in `--only-events` mode
+                    # otherwise it will start taking too much if we also crawl transactions
+                    current_batch_size = new_batch_size
                 for event in all_events:
                     print("Got event:")
                     pp.pprint(event, width=200, indent=4)

@@ -156,6 +156,10 @@ def handle_watch(args: argparse.Namespace) -> None:
             num_confirmations=args.confirmations,
             start_block=args.start,
             end_block=args.end,
+            min_blocks_batch=args.min_blocks_batch,
+            max_blocks_batch=args.max_blocks_batch,
+            batch_size_update_threshold=args.batch_size_update_threshold,
+            only_events=args.only_events,
             outfile=args.outfile,
         )
 
@@ -265,7 +269,34 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         "--confirmations",
         default=15,
         type=int,
-        help="Number of confirmations to wait for. Default=12",
+        help="Number of confirmations to wait for. Default=15",
+    )
+
+    watch_parser.add_argument(
+        "--min-blocks-batch",
+        default=100,
+        type=int,
+        help="Minimum number of blocks to batch together. Default=100",
+    )
+
+    watch_parser.add_argument(
+        "--max-blocks-batch",
+        default=1000,
+        type=int,
+        help="Maximum number of blocks to batch together. Default=1000",
+    )
+
+    watch_parser.add_argument(
+        "--batch-size-update-threshold",
+        default=100,
+        type=int,
+        help="Number of minimum events  before updating batch size (only for --only-events mode). Default=100",
+    )
+
+    watch_parser.add_argument(
+        "--only-events",
+        action="store_true",
+        help="Only watch events. Default=False",
     )
 
     watch_parser.add_argument(

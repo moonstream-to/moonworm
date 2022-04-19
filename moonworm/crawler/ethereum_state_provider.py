@@ -81,4 +81,4 @@ class Web3StateProvider(EthereumStateProvider):
         block = self._get_block(block_number)
 
         all_transactions = block["transactions"]
-        return [tx for tx in all_transactions if tx["to"] == address]
+        return [tx for tx in all_transactions if tx.get("to") == address]
