@@ -121,8 +121,6 @@ def _fetch_events_chunk(
             }
             all_events.append(event)
         except Exception as e:
-            # TODO remove:
-            print(log)
             if on_decode_error:
                 on_decode_error(e)
             continue

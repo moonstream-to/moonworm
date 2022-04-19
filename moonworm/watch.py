@@ -76,7 +76,6 @@ def watch_contract(
 
         while current_from_block <= to_block:
             current_to_block = min(current_from_block + batch_size, to_block)
-            print(f"From block: {current_from_block}, to block: {current_to_block}")
             try:
                 events_chunk = _fetch_events_chunk(
                     web3,
@@ -84,7 +83,6 @@ def watch_contract(
                     current_from_block,
                     current_to_block,
                     [contract_address],
-                    on_decode_error=lambda e: print(e),
                 )
                 events.extend(events_chunk)
                 current_from_block = current_to_block + 1
@@ -148,11 +146,6 @@ def watch_contract(
                 all_events, new_batch_size = _crawl_events(
                     event_abi, current_block, until_block, current_batch_size
                 )
-                # TODO: remove
-                if all_events:
-                    print("Got events:")
-                else:
-                    print("No events")
 
                 if only_events:
                     # Updating batch size only in `--only-events` mode
