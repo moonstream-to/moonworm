@@ -43,7 +43,7 @@ Optional args:
 - `-network {ethereum,polygon}`Network name that represents models from db. If the `--db` is set, required
 - `--only-events` Flag, if set: only watches events. Default=`False`
 - `--min-blocks-batch MIN_BLOCKS_BATCH` Minimum number of blocks to batch together. Default=100
-- `--max-blocks-batch MAX_BLOCKS_BATCH` Maximum number of blocks to batch together. Default=1000 **Note**: it is used only for `--only-events` mode
+- `--max-blocks-batch MAX_BLOCKS_BATCH` Maximum number of blocks to batch together. Default=1000 **Note**: it is used only in `--only-events` mode
 - 
 
 ### `moonworm generate-brownie`:
