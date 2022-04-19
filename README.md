@@ -18,7 +18,6 @@ Moonworm is a set of tools that helps you develop/analyze blockchain dapps. Pump
 pip install moonworm 
 ```
 
-**TODO**: test building(had problems on mac or with not defined dependency in setup.py) from source and add here.
 
 ## Usage:
 
