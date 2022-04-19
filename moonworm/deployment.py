@@ -27,7 +27,7 @@ def was_deployed_at_block(
     web3_client: Web3,
     contract_address: ChecksumAddress,
     block_number: int,
-    config: Optional[Dict[str, int]],
+    config: Optional[Dict[str, float]],
 ) -> bool:
     if config is not None:
         interval = config.get(CONFIG_KEY_WEB3_INTERVAL)
@@ -63,7 +63,7 @@ def find_deployment_block(
     logger.info(f"{log_prefix}Function invoked")
     config = {CONFIG_KEY_WEB3_INTERVAL: web3_interval}
 
-    max_block = web3_client.eth.block_number
+    max_block = int(web3_client.eth.block_number)
     min_block = 0
     middle_block = int((min_block + max_block) / 2)
 
