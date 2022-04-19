@@ -19,6 +19,7 @@ from .generators.basic import (
     generate_contract_interface_content,
 )
 from .generators.brownie import generate_brownie_interface
+from .version import MOONWORM_VERSION
 
 
 def write_file(content: str, path: str):
@@ -202,9 +203,18 @@ def handle_find_deployment(args: argparse.Namespace) -> None:
     print(result)
 
 
+# def handle_main_parset(args:argparse.Namespace) -> None:
+
+
 def generate_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Moonworm: Manage your smart contract")
-
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"moonworm {MOONWORM_VERSION}",
+        help="Show version",
+    )
     parser.set_defaults(func=lambda _: parser.print_help())
     subcommands = parser.add_subparsers(dest="subcommands")
 
