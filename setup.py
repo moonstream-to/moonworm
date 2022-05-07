@@ -16,7 +16,6 @@ setup(
         "inflection",
         "libcst",
         "tqdm",
-        "typing-extensions<4,>=3.7.4",
         "web3",
     ],
     extras_require={
