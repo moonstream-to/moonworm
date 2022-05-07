@@ -17,14 +17,10 @@ setup(
         "libcst",
         "tqdm",
         "typing-extensions<4,>=3.7.4",
+        "web3",
     ],
     extras_require={
-        "dev": [
-            "isort",
-            "mypy",
-            "wheel",
-            "web3[tester] >=5.27.0",
-        ],
+        "dev": ["isort", "mypy", "web3[tester] >=5.27.0"],
         "moonstream": ["moonstreamdb"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
