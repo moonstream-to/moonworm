@@ -26,6 +26,7 @@ class TestFunctionSpec(unittest.TestCase):
                     "args": "token_id_arg",
                     "type": "int",
                     "cli_type": "int",
+                    "raw_type": "uint256",
                 },
             ],
             "transact": False,
@@ -56,6 +57,7 @@ class TestFunctionSpec(unittest.TestCase):
                     "args": "owner",
                     "type": "ChecksumAddress",
                     "cli_type": None,
+                    "raw_type": "address",
                 },
                 {
                     "abi": "index",
@@ -64,6 +66,7 @@ class TestFunctionSpec(unittest.TestCase):
                     "args": "index",
                     "type": "int",
                     "cli_type": "int",
+                    "raw_type": "uint256",
                 },
             ],
             "transact": False,
