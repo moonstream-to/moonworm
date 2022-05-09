@@ -203,6 +203,15 @@ def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.Funct
             f"return self.contract.{func_raw_name}({','.join(param_names)})"
         )
     else:
+
+        func_params.append(
+            cst.Param(
+                name=cst.Name(value="block_number"),
+                annotation=make_annotation(["str", "int"], optional=True),
+                default=cst.SimpleString(value='"latest"'),
+            )
+        )
+        param_names.append("block_identifier=block_number")
         proxy_call_code = (
             f"return self.contract.{func_raw_name}.call({','.join(param_names)})"
         )
@@ -538,6 +547,15 @@ def generate_cli_handler(
                 value=cst.Name(value="transaction_config"),
             )
         )
+    else:
+        call_args.append(
+            cst.Arg(
+                keyword=cst.Name(value="block_number"),
+                value=cst.Attribute(
+                    attr=cst.Name(value="block_number"), value=cst.Name("args")
+                ),
+            )
+        )
     method_call = cst.Call(
         func=cst.Attribute(
             attr=cst.Name(value=spec["method"]),
@@ -605,7 +623,14 @@ def generate_add_default_arguments() -> cst.FunctionDef:
                 test=cst.UnaryOperation(
                     operator=cst.Not(), expression=cst.Name(value="transact")
                 ),
-                body=cst.parse_statement("return"),
+                body=cst.IndentedBlock(
+                    body=[
+                        cst.parse_statement(
+                            'parser.add_argument("--block-number", required=False, type=int, help="Call at the given block number, defaults to latest")'
+                        ),
+                        cst.parse_statement("return"),
+                    ]
+                ),
             ),
             cst.parse_statement(
                 'parser.add_argument("--sender", required=True, help="Path to keystore file for transaction sender")'
