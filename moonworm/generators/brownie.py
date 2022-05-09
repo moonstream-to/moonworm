@@ -116,6 +116,7 @@ def generate_brownie_constructor_function(
             ),
             cst.parse_statement("self.address = deployed_contract.address"),
             cst.parse_statement("self.contract = deployed_contract"),
+            cst.parse_statement("return deployed_contract.tx"),
         ]
     )
 
@@ -403,6 +404,7 @@ def generate_deploy_handler(
     function_body_raw.append(method_call_result_statement)
 
     function_body_raw.append(cst.parse_statement("print(result)"))
+    function_body_raw.append(cst.parse_statement("print(result.info())"))
 
     function_body = cst.IndentedBlock(body=function_body_raw)
 
@@ -555,6 +557,17 @@ def generate_cli_handler(
 
     function_body_raw.append(cst.parse_statement("print(result)"))
 
+    if requires_transaction:
+        verbose_print = cst.If(
+            test=cst.parse_expression("args.verbose"),
+            body=cst.IndentedBlock(
+                body=[
+                    cst.parse_statement("print(result.info())"),
+                ]
+            ),
+        )
+        function_body_raw.append(verbose_print)
+
     function_body = cst.IndentedBlock(body=function_body_raw)
 
     function_def = cst.FunctionDef(
@@ -617,6 +630,9 @@ def generate_add_default_arguments() -> cst.FunctionDef:
             ),
             cst.parse_statement(
                 'parser.add_argument("--value", default=None, help="Value of the transaction in wei(optional)")'
+            ),
+            cst.parse_statement(
+                'parser.add_argument("--verbose", action="store_true", help="Print verbose output")'
             ),
         ],
     )
