@@ -413,7 +413,15 @@ def generate_deploy_handler(
     function_body_raw.append(method_call_result_statement)
 
     function_body_raw.append(cst.parse_statement("print(result)"))
-    function_body_raw.append(cst.parse_statement("print(result.info())"))
+    verbose_print = cst.If(
+        test=cst.parse_expression("args.verbose"),
+        body=cst.IndentedBlock(
+            body=[
+                cst.parse_statement("print(result.info())"),
+            ]
+        ),
+    )
+    function_body_raw.append(verbose_print)
 
     function_body = cst.IndentedBlock(body=function_body_raw)
 
