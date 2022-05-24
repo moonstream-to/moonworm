@@ -9,6 +9,7 @@ from moonstreamdb.models import (
     EthereumTransaction,
     PolygonLabel,
     PolygonTransaction,
+    XDaiTransaction,
 )
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.base import NO_ARG
@@ -77,7 +78,7 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
 
     @staticmethod
     def _transform_to_w3_tx(
-        tx_raw: Union[EthereumTransaction, PolygonTransaction],
+        tx_raw: Union[EthereumTransaction, PolygonTransaction, XDaiTransaction],
     ) -> Dict[str, Any]:
         tx = {
             "blockNumber": tx_raw.block_number,
