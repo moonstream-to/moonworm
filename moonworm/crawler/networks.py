@@ -9,12 +9,16 @@ from moonstreamdb.models import (
     PolygonBlock,
     PolygonLabel,
     PolygonTransaction,
+    XDaiBlock,
+    XDaiLabel,
+    XDaiTransaction,
 )
 
 
 class Network(Enum):
     ethereum = "ethereum"
     polygon = "polygon"
+    xdai = "xdai"
 
 
 MODELS: Dict[Network, Dict[str, Base]] = {
@@ -27,5 +31,10 @@ MODELS: Dict[Network, Dict[str, Base]] = {
         "blocks": PolygonBlock,
         "labels": PolygonLabel,
         "transactions": PolygonTransaction,
+    },
+    Network.xdai: {
+        "blocks": XDaiBlock,
+        "labels": XDaiLabel,
+        "transactions": XDaiTransaction,
     },
 }
