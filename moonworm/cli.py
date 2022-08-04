@@ -125,6 +125,7 @@ def handle_watch(args: argparse.Namespace) -> None:
         network = Network.__members__[args.network]
 
         from moonstreamdb.db import yield_db_session_ctx
+
         from .crawler.moonstream_ethereum_state_provider import (
             MoonstreamEthereumStateProvider,
         )

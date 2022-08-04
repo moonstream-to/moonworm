@@ -25,10 +25,8 @@ from sqlalchemy.sql.base import NO_ARG
 from web3 import Web3
 
 from .ethereum_state_provider import EthereumStateProvider
-
 from .networks import MODELS
 from .utils import Network
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
