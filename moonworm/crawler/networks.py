@@ -15,10 +15,11 @@ try:
     )
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")
-    print("to enable, run: `pip install -e[moonstream]`")
+    print("to enable, run: `pip install moonworm[moonstream]`")
     raise ImportError(
-        "moonstreamdb not installed, to install, run: `pip install -e[moonstream]`"
+        "moonstreamdb not installed, to install, run: `pip install moonworm[moonstream]`"
     )
+
 
 from .utils import Network
 
