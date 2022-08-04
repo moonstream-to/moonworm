@@ -4,21 +4,15 @@ from typing import Any, Dict, List, Optional, Union
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 
-try:
-    from moonstreamdb.db import yield_db_session_ctx
-    from moonstreamdb.models import (
-        EthereumLabel,
-        EthereumTransaction,
-        PolygonLabel,
-        PolygonTransaction,
-        XDaiTransaction,
-    )
-except ImportError:
-    print("this feature requires moonstreamdb which is not installed")
-    print("to enable, run: `pip install moonworm[moonstream]`")
-    raise ImportError(
-        "moonstreamdb not installed, to install, run: `pip install moonworm[moonstream]`"
-    )
+from .networks import yield_db_session_ctx
+from .networks import (
+    EthereumLabel,
+    EthereumTransaction,
+    PolygonLabel,
+    PolygonTransaction,
+    XDaiTransaction,
+)
+
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.base import NO_ARG

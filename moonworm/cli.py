@@ -124,8 +124,7 @@ def handle_watch(args: argparse.Namespace) -> None:
             raise ValueError("Please specify --network")
         network = Network.__members__[args.network]
 
-        from moonstreamdb.db import yield_db_session_ctx
-
+        from .crawler.networks import yield_db_session_ctx
         from .crawler.moonstream_ethereum_state_provider import (
             MoonstreamEthereumStateProvider,
         )

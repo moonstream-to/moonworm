@@ -13,6 +13,7 @@ try:
         XDaiLabel,
         XDaiTransaction,
     )
+    from moonstreamdb.db import yield_db_session_ctx
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")
     print("to enable, run: `pip install moonworm[moonstream]`")
