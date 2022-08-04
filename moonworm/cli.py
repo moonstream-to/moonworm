@@ -12,7 +12,7 @@ from moonworm.crawler.ethereum_state_provider import Web3StateProvider
 from moonworm.watch import watch_contract
 
 from .contracts import CU, ERC20, ERC721, CULands
-from .crawler.networks import Network
+from .crawler.utils import Network
 from .deployment import find_deployment_block
 from .generators.basic import (
     generate_contract_cli_content,
@@ -123,8 +123,8 @@ def handle_watch(args: argparse.Namespace) -> None:
         if args.network is None:
             raise ValueError("Please specify --network")
         network = Network.__members__[args.network]
-        from moonstreamdb.db import yield_db_session_ctx
 
+        from moonstreamdb.db import yield_db_session_ctx
         from .crawler.moonstream_ethereum_state_provider import (
             MoonstreamEthereumStateProvider,
         )

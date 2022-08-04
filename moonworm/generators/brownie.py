@@ -785,6 +785,13 @@ def generate_cli_generator(
                         value=cst.parse_expression("bytes_argument_type"),
                     ),
                 )
+            elif param["type"] == "tuple":
+                call_args.append(
+                    cst.Arg(
+                        keyword=cst.Name(value="type"),
+                        value=cst.parse_expression("eval"),
+                    ),
+                )
 
             add_argument_call = cst.Call(
                 func=cst.Attribute(

@@ -3,20 +3,32 @@ from typing import Any, Dict, List, Optional, Union
 
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
-from moonstreamdb.db import yield_db_session_ctx
-from moonstreamdb.models import (
-    EthereumLabel,
-    EthereumTransaction,
-    PolygonLabel,
-    PolygonTransaction,
-    XDaiTransaction,
-)
+
+try:
+    from moonstreamdb.db import yield_db_session_ctx
+    from moonstreamdb.models import (
+        EthereumLabel,
+        EthereumTransaction,
+        PolygonLabel,
+        PolygonTransaction,
+        XDaiTransaction,
+    )
+except ImportError:
+    print("this feature requires moonstreamdb which is not installed")
+    print("to enable, run: `pip install -e[moonstream]`")
+    raise ImportError(
+        "moonstreamdb not installed, to install, run: `pip install -e[moonstream]`"
+    )
+
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.base import NO_ARG
 from web3 import Web3
 
 from .ethereum_state_provider import EthereumStateProvider
-from .networks import MODELS, Network
+
+from .networks import MODELS
+from .utils import Network
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
