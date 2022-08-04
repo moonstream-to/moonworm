@@ -3,23 +3,20 @@ from typing import Any, Dict, List, Optional, Union
 
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
-
-from .networks import yield_db_session_ctx
-from .networks import (
-    EthereumLabel,
-    EthereumTransaction,
-    PolygonLabel,
-    PolygonTransaction,
-    XDaiTransaction,
-)
-
-
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.base import NO_ARG
 from web3 import Web3
 
 from .ethereum_state_provider import EthereumStateProvider
-from .networks import MODELS
+from .networks import (
+    MODELS,
+    EthereumLabel,
+    EthereumTransaction,
+    PolygonLabel,
+    PolygonTransaction,
+    XDaiTransaction,
+    yield_db_session_ctx,
+)
 from .utils import Network
 
 logging.basicConfig(level=logging.INFO)
