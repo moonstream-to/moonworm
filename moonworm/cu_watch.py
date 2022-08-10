@@ -21,7 +21,7 @@ from web3.middleware import geth_poa_middleware
 from moonworm.crawler.moonstream_ethereum_state_provider import (
     MoonstreamEthereumStateProvider,
 )
-from moonworm.crawler.networks import Network
+from moonworm.crawler.utils import Network
 
 from .contracts import CU, ERC721
 from .crawler.ethereum_state_provider import EthereumStateProvider

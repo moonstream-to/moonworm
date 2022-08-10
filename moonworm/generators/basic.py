@@ -100,6 +100,8 @@ def python_type(evm_type: str) -> List[str]:
         return ["ChecksumAddress"]
     elif evm_type == "bool":
         return ["bool"]
+    elif evm_type == "tuple":
+        return ["tuple"]
     else:
         return ["Any"]
 
@@ -161,6 +163,8 @@ def generate_contract_class(
 # transactions (see "generate_add_default_arguments" in brownie.py for an example of default arguments).
 PROTECTED_ARG_NAMES: Set[str] = {
     "address",
+    "block-number",
+    "block_number",
     "chain",
     "confirmations",
     "gas-price",
@@ -170,6 +174,7 @@ PROTECTED_ARG_NAMES: Set[str] = {
     "password",
     "sender",
     "signer",
+    "value",
 }
 
 
