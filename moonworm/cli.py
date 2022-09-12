@@ -101,7 +101,7 @@ def handle_brownie_generate(args: argparse.Namespace):
         build = json.load(ifp)
 
     abi = build["abi"]
-    interface = generate_brownie_interface(abi, args.name)
+    interface = generate_brownie_interface(abi, build, args.name, prod=args.prod)
     write_file(interface, os.path.join(args.outdir, args.name + ".py"))
 
 
@@ -380,6 +380,11 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         "--project",
         required=True,
         help=f"Path to brownie project directory",
+    )
+    generate_brownie_parser.add_argument(
+        "--prod",
+        action="store_true",
+        help="Generate shippable python interface, in which abi and bytecode will be included inside generated file",
     )
     generate_brownie_parser.set_defaults(func=handle_brownie_generate)
 
