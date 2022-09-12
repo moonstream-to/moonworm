@@ -384,7 +384,7 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     generate_brownie_parser.add_argument(
         "--prod",
         action="store_true",
-        help="Generate shippable python interface, in which abi and bytecode will be included inside generated file",
+        help="Generate shippable python interface, in which abi and bytecode will be included inside the generated file",
     )
     generate_brownie_parser.set_defaults(func=handle_brownie_generate)
 
