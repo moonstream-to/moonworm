@@ -101,12 +101,10 @@ def handle_brownie_generate(args: argparse.Namespace):
     with open(build_file_path, "r") as ifp:
         build = json.load(ifp)
 
-    # print(project_directory)
-    # print(args.outdir)
-    # print(os.path.relpath(project_directory, args.outdir))
-
     relpath = os.path.relpath(project_directory, args.outdir)
-    splitted_relpath = [f'"{item}"' for item in relpath.split(os.sep)]
+    splitted_relpath = [
+        f'"{item}"' for item in relpath.split(os.sep)
+    ]  # os.sep => '/' for unix '\' for windows subsystems
     splitted_relpath_string = ",".join(splitted_relpath)
 
     abi = build["abi"]
