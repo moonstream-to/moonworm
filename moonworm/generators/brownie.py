@@ -895,7 +895,7 @@ def generate_brownie_interface(
     abi: List[Dict[str, Any]],
     contract_build: Dict[str, Any],
     contract_name: str,
-    realitive_path: str,
+    relative_path: str,
     cli: bool = True,
     format: bool = True,
     prod: bool = False,
@@ -923,7 +923,7 @@ def generate_brownie_interface(
         content = BROWNIE_INTERFACE_TEMPLATE.format(
             contract_body=contract_body,
             moonworm_version=MOONWORM_VERSION,
-            realitive_path=realitive_path,
+            relative_path=relative_path,
         )
 
     if format:
