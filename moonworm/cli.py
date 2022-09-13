@@ -3,6 +3,7 @@ import json
 import os
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
+from posixpath import relpath
 from shutil import copyfile
 
 from web3.main import Web3
@@ -100,8 +101,20 @@ def handle_brownie_generate(args: argparse.Namespace):
     with open(build_file_path, "r") as ifp:
         build = json.load(ifp)
 
+    relpath = os.path.relpath(project_directory, args.outdir)
+    splitted_relpath = [
+        f'"{item}"' for item in relpath.split(os.sep)
+    ]  # os.sep => '/' for unix '\' for windows subsystems
+    splitted_relpath_string = ",".join(splitted_relpath)
+
     abi = build["abi"]
-    interface = generate_brownie_interface(abi, build, args.name, prod=args.prod)
+    interface = generate_brownie_interface(
+        abi,
+        build,
+        args.name,
+        splitted_relpath_string,
+        prod=args.prod,
+    )
     write_file(interface, os.path.join(args.outdir, args.name + ".py"))
 
 
