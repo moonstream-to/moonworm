@@ -3,7 +3,6 @@ import json
 import os
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
-from posixpath import relpath
 from shutil import copyfile
 
 from web3.main import Web3
