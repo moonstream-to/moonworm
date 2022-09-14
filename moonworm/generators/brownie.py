@@ -12,12 +12,17 @@ from .basic import format_code, function_spec, get_constructor, make_annotation
 BROWNIE_INTERFACE_TEMPLATE_PATH = os.path.join(
     os.path.dirname(__file__), "brownie_contract.py.template"
 )
+BROWNIE_INTERFACE_PROD_TEMPLATE_PATH = os.path.join(
+    os.path.dirname(__file__), "brownie_contract_prod.py.template"
+)
 try:
     with open(BROWNIE_INTERFACE_TEMPLATE_PATH, "r") as ifp:
         BROWNIE_INTERFACE_TEMPLATE = ifp.read()
+    with open(BROWNIE_INTERFACE_PROD_TEMPLATE_PATH, "r") as ifp:
+        BROWNIE_INTERFACE_PROD_TEMPLATE = ifp.read()
 except Exception as e:
     logging.warn(
-        f"WARNING: Could not load cli template from {BROWNIE_INTERFACE_TEMPLATE_PATH}:"
+        f"WARNING: Could not load cli template from ({BROWNIE_INTERFACE_TEMPLATE_PATH})/({BROWNIE_INTERFACE_PROD_TEMPLATE_PATH}):"
     )
     logging.warn(e)
 
@@ -887,7 +892,13 @@ def generate_brownie_cli(
 
 
 def generate_brownie_interface(
-    abi: List[Dict[str, Any]], contract_name: str, cli: bool = True, format: bool = True
+    abi: List[Dict[str, Any]],
+    contract_build: Dict[str, Any],
+    contract_name: str,
+    relative_path: str,
+    cli: bool = True,
+    format: bool = True,
+    prod: bool = False,
 ) -> str:
     contract_class = generate_brownie_contract_class(abi, contract_name)
     module_body = [contract_class]
@@ -897,11 +908,23 @@ def generate_brownie_interface(
         module_body.extend(contract_cli_functions)
 
     contract_body = cst.Module(body=module_body).code
-
-    content = BROWNIE_INTERFACE_TEMPLATE.format(
-        contract_body=contract_body,
-        moonworm_version=MOONWORM_VERSION,
-    )
+    if prod:
+        content = BROWNIE_INTERFACE_PROD_TEMPLATE.format(
+            contract_abi=abi,
+            contract_build={
+                "bytecode": contract_build["bytecode"],
+                "abi": contract_build["abi"],
+                "contractName": contract_build["contractName"],
+            },
+            contract_body=contract_body,
+            moonworm_version=MOONWORM_VERSION,
+        )
+    else:
+        content = BROWNIE_INTERFACE_TEMPLATE.format(
+            contract_body=contract_body,
+            moonworm_version=MOONWORM_VERSION,
+            relative_path=relative_path,
+        )
 
     if format:
         content = format_code(content)
