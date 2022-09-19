@@ -6,6 +6,7 @@ from logging import error
 from typing import Any, Callable, Dict, List, Optional
 
 from eth_typing.evm import ChecksumAddress
+from eth_utils import function_abi_to_4byte_selector
 from web3 import Web3
 from web3.contract import Contract
 from web3.types import ABI
@@ -146,6 +147,7 @@ class FunctionCallCrawler:
         self.contract_addresses = contract_addresses
         self.contract = Web3().eth.contract(abi=self.contract_abi)
         self.on_decode_error = on_decode_error
+        self.whitelisted_methods = [Web3().toHex(function_abi_to_4byte_selector(a)) for a in self.contract_abi]
 
     def process_transaction(self, transaction: Dict[str, Any]):
         try:
@@ -189,7 +191,11 @@ class FunctionCallCrawler:
                     address, block_number
                 )
                 for transaction in transactions:
-                    self.process_transaction(transaction)
+                    method_id = transaction.get('input')[:10]
+                    if method_id in self.whitelisted_methods:
+                        self.process_transaction(transaction)
+                    else:
+                        print(f"Function not in ABI, MethodID: {method_id} tx: {transaction['hash'].hex()}. Ignored.")
             self.state.state
         if flush_state:
             self.state.flush()
