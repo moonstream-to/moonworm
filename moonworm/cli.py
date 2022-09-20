@@ -177,34 +177,6 @@ def handle_watch(args: argparse.Namespace) -> None:
         )
 
 
-def handle_watch_cu(args: argparse.Namespace) -> None:
-    from moonworm.cu_watch import watch_cu_contract
-
-    MOONSTREAM_DB_URI = os.environ.get("MOONSTREAM_DB_URI")
-    if not MOONSTREAM_DB_URI:
-        print("Please set MOONSTREAM_DB_URI environment variable")
-        return
-
-    if args.abi is not None:
-        with open(args.abi, "r") as ifp:
-            contract_abi = json.load(ifp)
-    else:
-        print("Using CUContract abi since no abi is specified")
-        contract_abi = CU.abi()
-
-    web3 = Web3(Web3.HTTPProvider(args.web3))
-    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
-    watch_cu_contract(
-        web3,
-        web3.toChecksumAddress(args.contract),
-        contract_abi,
-        args.confirmations,
-        start_block=args.deployment_block,
-        force_start=args.force,
-    )
-
-
 def handle_find_deployment(args: argparse.Namespace) -> None:
     web3_client = Web3(Web3.HTTPProvider(args.web3))
     result = find_deployment_block(web3_client, args.contract, args.interval)
@@ -326,51 +298,6 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     )
 
     watch_parser.set_defaults(func=handle_watch)
-
-    watch_cu_parser = subcommands.add_parser(
-        "watch-cu", help="Watch a Crypto Unicorns contract"
-    )
-    watch_cu_parser.add_argument(
-        "-i",
-        "--abi",
-        default=None,
-        help="ABI file path, default is abi in  fixtures/abis/CU.json",
-    )
-    watch_cu_parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="Force start from given block",
-    )
-    watch_cu_parser.add_argument(
-        "-c",
-        "--contract",
-        required=True,
-        help="Contract address",
-    )
-
-    watch_cu_parser.add_argument(
-        "-w",
-        "--web3",
-        required=True,
-        help="Web3 provider",
-    )
-
-    watch_cu_parser.add_argument(
-        "--confirmations",
-        default=10,
-        type=int,
-        help="Number of confirmations to wait for. Default=12",
-    )
-
-    watch_cu_parser.add_argument(
-        "--deployment-block",
-        "-d",
-        type=int,
-        help="Block number of the deployment",
-    )
-
-    watch_cu_parser.set_defaults(func=handle_watch_cu)
 
     generate_brownie_parser = subcommands.add_parser(
         "generate-brownie", description="Moonworm code generator for brownie projects"
