@@ -1,3 +1,17 @@
+__doc__ = """
+This module implements the moonworm smart contract crawler.
+
+The [`watch_contract`](moonworm.watch.watch_contract) method is the entrypoint to this functionality
+and it is what powers the "moonworm watch" command.
+
+`watch_crawler` currently supports crawling events and direct method calls on a smart contract.
+
+It does *not* currently support crawling internal messages to a smart contract - this means that any
+calls made to the target smart contract from *another* smart contract will not be recorded directly
+in the crawldata. If the internal message resulted in any events being emitted on the target
+contract, those event *will* be reflected in the crawldata.
+"""
+
 import json
 import pprint as pp
 import time
@@ -60,7 +74,10 @@ def watch_contract(
     outfile: Optional[str] = None,
 ) -> None:
     """
-    Watches a contract for events and calls.
+    Watches a contract for events and method calls.
+
+    Uses a [moonworm.crawler.ethereum_state_provider.EthereumStateProvider]() to access blockchain state
+    for the crawl.
     """
 
     def _crawl_events(
