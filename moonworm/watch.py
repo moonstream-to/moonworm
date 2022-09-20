@@ -1,9 +1,8 @@
 """
-This module implements the moonworm smart contract crawler.
+Implements the moonworm smart contract crawler.
 
 The [`watch_contract`][moonworm.watch.watch_contract] method is the entrypoint to this functionality
 and it is what powers the "moonworm watch" command.
-
 """
 
 import json

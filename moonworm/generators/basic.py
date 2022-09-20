@@ -1,4 +1,12 @@
-import copy
+"""
+Generates [`web3.py`](https://github.com/ethereum/web3.py)-compatible bindings to Ethereum smart contracts from their ABIs.
+
+The entrypoints to code generation are:
+
+- [`generate_contract_interface_content`][moonworm.generators.basic.generate_contract_interface_content]
+- [`generate_contract_cli_content`][moonworm.generators.basic.generate_contract_cli_content]
+"""
+
 import keyword
 import logging
 import os
@@ -479,6 +487,19 @@ def generate_argument_parser_function(abi: List[Dict[str, Any]]) -> cst.Function
 def generate_contract_interface_content(
     abi: List[Dict[str, Any]], abi_file_name: str, format: bool = True
 ) -> str:
+    """
+    Generates a Python class designed to interact with a smart contract with the given ABI.
+
+    ## Inputs
+    1. `abi`: The ABI to the smart contract. This is expected to be the Python representation of a JSON
+    list that conforms to the [Solidity ABI specification](https://docs.soliditylang.org/en/v0.8.16/abi-spec.html#json).
+    2. `abi_file_name`: Path where the contract ABI will be stored as part of codegen.
+    3. `format`: If True, uses [`black`](https://github.com/psf/black) to format the generated code before
+    returning it.
+
+    ## Outputs
+    The generated code as a string.
+    """
     contract_body = cst.Module(body=[generate_contract_class(abi)]).code
 
     content = INTERFACE_FILE_TEMPLATE.format(
@@ -496,6 +517,19 @@ def generate_contract_interface_content(
 def generate_contract_cli_content(
     abi: List[Dict[str, Any]], abi_file_name: str, format: bool = True
 ) -> str:
+    """
+    Generates a command-line interface designed to interact with a smart contract with the given ABI.
+
+    ## Inputs
+    1. `abi`: The ABI to the smart contract. This is expected to be the Python representation of a JSON
+    list that conforms to the [Solidity ABI specification](https://docs.soliditylang.org/en/v0.8.16/abi-spec.html#json).
+    2. `abi_file_name`: Path where the contract ABI will be stored as part of codegen.
+    3. `format`: If True, uses [`black`](https://github.com/psf/black) to format the generated code before
+    returning it.
+
+    ## Outputs
+    The generated code as a string.
+    """
     cli_body = cst.Module(body=[generate_argument_parser_function(abi)]).code
 
     content = CLI_FILE_TEMPLATE.format(
