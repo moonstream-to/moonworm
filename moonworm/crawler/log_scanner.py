@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Dict
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from eth_abi.codec import ABICodec
 from eth_typing.evm import ChecksumAddress

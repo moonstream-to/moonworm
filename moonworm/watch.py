@@ -24,7 +24,7 @@ from .crawler.function_call_crawler import (
     FunctionCallCrawlerState,
     Web3StateProvider,
 )
-from .crawler.log_scanner import _fetch_events_chunk, _crawl_events
+from .crawler.log_scanner import _crawl_events, _fetch_events_chunk
 
 
 class MockState(FunctionCallCrawlerState):
