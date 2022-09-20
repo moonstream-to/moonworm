@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from eth_abi.codec import ABICodec
 from eth_typing.evm import ChecksumAddress
@@ -125,6 +125,47 @@ def _fetch_events_chunk(
                 on_decode_error(e)
             continue
     return all_events
+
+
+def _crawl_events(
+    web3: Web3,
+    event_abi: Any,
+    from_block: int,
+    to_block: int,
+    batch_size: int,
+    contract_address: ChecksumAddress,
+    batch_size_update_threshold: int = 1000,
+    max_blocks_batch: int = 10000,
+    min_blocks_batch: int = 100,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Crawls events from the given block range.
+    reduces the batch_size if response is failing.
+    increases the batch_size if response is successful.
+    """
+    events = []
+    current_from_block = from_block
+
+    while current_from_block <= to_block:
+        current_to_block = min(current_from_block + batch_size, to_block)
+        try:
+            events_chunk = _fetch_events_chunk(
+                web3,
+                event_abi,
+                current_from_block,
+                current_to_block,
+                [contract_address],
+            )
+            events.extend(events_chunk)
+            current_from_block = current_to_block + 1
+            if len(events) <= batch_size_update_threshold:
+                batch_size = min(batch_size * 2, max_blocks_batch)
+        except Exception as e:
+            if batch_size <= min_blocks_batch:
+                raise e
+            time.sleep(0.1)
+            batch_size = max(batch_size // 2, min_blocks_batch)
+    return events, batch_size
 
 
 class EventScanner:
