@@ -1,5 +1,7 @@
 """
-This module allows users to inspect the conditions under which a smart contract was deployed.
+Allows users to inspect the conditions under which a smart contract was deployed.
+
+The entrypoint for this functionality is [`find_deployment_block`][moonworm.deployment.find_deployment_block].
 """
 import logging
 import os
@@ -53,10 +55,27 @@ def find_deployment_block(
     web3_interval: float,
 ) -> Optional[int]:
     """
-    Note: We will assume no selfdestruct for now.
+    Performs a binary search on the blockchain to discover precisely the block when a smart contract was
+    deployed.
 
-    This means that, if the address does not currently contain code, we will assume it never contained
-    code and is therefore not a smart contract address.
+    Note: Assumes no selfdestruct. This means that, if the address does not currently contain code,
+    we will assume it never contained code and is therefore not a smart contract address.
+
+    ## Inputs
+
+    1. `web3_client`: A web3 client through which we can get block and address information on the blockchain.
+    An instance of web3.Web3.
+
+    2. `contract_address`: Address of the smart contract for which we want the deployment block. If this
+    address does not represent a smart contract, this method will return None.
+
+    3. `web3_interval`: Number of seconds to wait between requests to the web3_client. Useful if your
+    web3 provider rate limits you.
+
+    ## Outputs
+
+    Returns the block number of the block in which the smart contract was deployed. If the address does
+    not represent an existing smart contract, returns None.
     """
     log_prefix = f"find_deployment_block(web3_client, contract_address={contract_address}, web3_interval={web3_interval}) -- "
 

@@ -1,3 +1,9 @@
+"""
+Generates [`brownie`](https://github.com/eth-brownie/brownie)-compatible bindings to Ethereum smart contracts from their ABIs.
+
+The entrypoint to code generation is [`generate_brownie_interface`][moonworm.generators.brownie.generate_brownie_interface].
+"""
+
 import copy
 import logging
 import os
@@ -865,6 +871,17 @@ def generate_brownie_cli(
 ) -> List[cst.FunctionDef]:
     """
     Generates an argparse CLI to a brownie smart contract using the generated smart contract interface.
+
+    ## Inputs
+
+    1. `abi`: The ABI to the smart contract. This is expected to be the Python representation of a JSON
+    list that conforms to the [Solidity ABI specification](https://docs.soliditylang.org/en/v0.8.16/abi-spec.html#json).
+
+    2. `contract_name`: Name for the smart contract
+
+    ## Outputs
+
+    Concrete syntax tree representation of the generated code.
     """
     get_transaction_config_function = generate_get_transaction_config()
     add_default_arguments_function = generate_add_default_arguments()
@@ -900,6 +917,35 @@ def generate_brownie_interface(
     format: bool = True,
     prod: bool = False,
 ) -> str:
+    """
+    Generates Python code which allows you to interact with a smart contract with a given ABI, build data, and a given name.
+
+    The generated code uses the [`brownie`](https://github.com/eth-brownie/brownie) tool to interact with
+    the blockchain.
+
+    ## Inputs
+
+    1. `abi`: The ABI to the smart contract. This is expected to be the Python representation of a JSON
+    list that conforms to the [Solidity ABI specification](https://docs.soliditylang.org/en/v0.8.16/abi-spec.html#json).
+
+    2. `contract_build`: `brownie` build information for the contract (e.g. its bytecode).
+
+    3. `contract_name`: Name for the smart contract
+
+    4. `relative_path`: Path to brownie project directory (relative to target path for the generated code).
+
+    5. `cli`: Set to True if a CLI should be generated in addition to a Python class.
+
+    6. `format`: If True, uses [`black`](https://github.com/psf/black) to format the generated code before
+    returning it.
+
+    7. `prod`: If True, creates a self-contained file. Generated code will not require reference to an
+    existing brownie project at its runtime.
+
+
+    ## Outputs
+    The generated code as a string.
+    """
     contract_class = generate_brownie_contract_class(abi, contract_name)
     module_body = [contract_class]
 
