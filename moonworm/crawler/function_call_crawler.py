@@ -147,7 +147,7 @@ class FunctionCallCrawler:
         self.contract_addresses = contract_addresses
         self.contract = Web3().eth.contract(abi=self.contract_abi)
         self.on_decode_error = on_decode_error
-        self.whitelisted_methods = [Web3().toHex(function_abi_to_4byte_selector(a)) for a in self.contract_abi]
+        self.whitelisted_methods = {Web3().toHex(function_abi_to_4byte_selector(a)) for a in self.contract_abi}
 
     def process_transaction(self, transaction: Dict[str, Any]):
         try:
