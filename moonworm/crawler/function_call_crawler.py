@@ -147,7 +147,9 @@ class FunctionCallCrawler:
         self.contract_addresses = contract_addresses
         self.contract = Web3().eth.contract(abi=self.contract_abi)
         self.on_decode_error = on_decode_error
-        self.whitelisted_methods = {Web3.toHex(function_abi_to_4byte_selector(a)) for a in self.contract_abi}
+        self.whitelisted_methods = {
+            Web3.toHex(function_abi_to_4byte_selector(a)) for a in self.contract_abi
+        }
 
     def process_transaction(self, transaction: Dict[str, Any]):
         try:
@@ -191,11 +193,13 @@ class FunctionCallCrawler:
                     address, block_number
                 )
                 for transaction in transactions:
-                    method_id = transaction.get('input')[:10]
+                    method_id = transaction.get("input")[:10]
                     if method_id in self.whitelisted_methods:
                         self.process_transaction(transaction)
                     else:
-                        print(f"Function not in ABI, MethodID: {method_id} tx: {transaction['hash'].hex()}. Ignored.")
+                        print(
+                            f"Function not in ABI, MethodID: {method_id} tx: {transaction['hash'].hex()}. Ignored."
+                        )
             self.state.state
         if flush_state:
             self.state.flush()
