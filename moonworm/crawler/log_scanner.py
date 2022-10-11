@@ -168,6 +168,111 @@ def _crawl_events(
     return events, batch_size
 
 
+async def _async_fetch_events_chunk(
+    web3,
+    event_abi,
+    from_block: int,
+    to_block: int,
+    addresses: Optional[List[ChecksumAddress]] = None,
+    on_decode_error: Optional[Callable[[Exception], None]] = None,
+) -> List[Any]:
+    """Get events using eth_getLogs API.
+
+    Event structure:
+    {
+        "event": Event name,
+        "args": dictionary of event arguments,
+        "address": contract address,
+        "blockNumber": block number,
+        "transactionHash": transaction hash,
+        "logIndex": log index
+    }
+
+    """
+
+    if from_block is None:
+        raise TypeError("Missing mandatory keyword argument to getLogs: fromBlock")
+
+    # Depending on the Solidity version used to compile
+    # the contract that uses the ABI,
+    # it might have Solidity ABI encoding v1 or v2.
+    # We just assume the default that you set on Web3 object here.
+    # More information here https://eth-abi.readthedocs.io/en/latest/index.html
+    codec: ABICodec = web3.codec
+
+    _, event_filter_params = construct_event_filter_params(
+        event_abi,
+        codec,
+        fromBlock=from_block,
+        toBlock=to_block,
+    )
+    if addresses:
+        event_filter_params["address"] = addresses
+
+    logs = await web3.AsyncEth.get_logs(event_filter_params)
+
+    # Convert raw binary data to Python proxy objects as described by ABI
+    all_events = []
+    for log in logs:
+        try:
+            raw_event = get_event_data(codec, event_abi, log)
+            event = {
+                "event": raw_event["event"],
+                "args": json.loads(Web3.toJSON(utfy_dict(dict(raw_event["args"])))),
+                "address": raw_event["address"],
+                "blockNumber": raw_event["blockNumber"],
+                "transactionHash": raw_event["transactionHash"].hex(),
+                "logIndex": raw_event["logIndex"],
+            }
+            all_events.append(event)
+        except Exception as e:
+            if on_decode_error:
+                on_decode_error(e)
+            continue
+    return all_events
+
+
+async def _asynv_crawl_events(
+    web3: Web3,
+    event_abi: Any,
+    from_block: int,
+    to_block: int,
+    batch_size: int,
+    contract_address: ChecksumAddress,
+    batch_size_update_threshold: int = 1000,
+    max_blocks_batch: int = 10000,
+    min_blocks_batch: int = 100,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Crawls events from the given block range.
+    reduces the batch_size if response is failing.
+    increases the batch_size if response is successful.
+    """
+    events = []
+    current_from_block = from_block
+
+    while current_from_block <= to_block:
+        current_to_block = min(current_from_block + batch_size, to_block)
+        try:
+            events_chunk = await _async_fetch_events_chunk(
+                web3,
+                event_abi,
+                current_from_block,
+                current_to_block,
+                [contract_address],
+            )
+            events.extend(events_chunk)
+            current_from_block = current_to_block + 1
+            if len(events) <= batch_size_update_threshold:
+                batch_size = min(batch_size * 2, max_blocks_batch)
+        except Exception as e:
+            if batch_size <= min_blocks_batch:
+                raise e
+            time.sleep(0.1)
+            batch_size = max(batch_size // 2, min_blocks_batch)
+    return events, batch_size
+
+
 class EventScanner:
     def __init__(
         self,
