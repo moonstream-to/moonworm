@@ -33,12 +33,12 @@ MODELS: Dict[Network, Dict[str, Base]] = {
         "labels": EthereumLabel,
         "transactions": EthereumTransaction,
     },
-    Network.polygon: {
+    Network.mumbai: {
         "blocks": MumbaiBlock,
         "labels": MumbaiLabel,
         "transactions": MumbaiTransaction,
     },
-    Network.mumbai: {
+    Network.polygon: {
         "blocks": PolygonBlock,
         "labels": PolygonLabel,
         "transactions": PolygonTransaction,

@@ -81,7 +81,9 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
 
     @staticmethod
     def _transform_to_w3_tx(
-        tx_raw: Union[EthereumTransaction, MumbaiTransaction, PolygonTransaction, XDaiTransaction],
+        tx_raw: Union[
+            EthereumTransaction, MumbaiTransaction, PolygonTransaction, XDaiTransaction
+        ],
     ) -> Dict[str, Any]:
         tx = {
             "blockNumber": tx_raw.block_number,
