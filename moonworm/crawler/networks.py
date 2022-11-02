@@ -7,6 +7,9 @@ try:
         EthereumBlock,
         EthereumLabel,
         EthereumTransaction,
+        MumbaiBlock,
+        MumbaiLabel,
+        MumbaiTransaction,
         PolygonBlock,
         PolygonLabel,
         PolygonTransaction,
@@ -29,6 +32,11 @@ MODELS: Dict[Network, Dict[str, Base]] = {
         "blocks": EthereumBlock,
         "labels": EthereumLabel,
         "transactions": EthereumTransaction,
+    },
+    Network.mumbai: {
+        "blocks": MumbaiBlock,
+        "labels": MumbaiLabel,
+        "transactions": MumbaiTransaction,
     },
     Network.polygon: {
         "blocks": PolygonBlock,
