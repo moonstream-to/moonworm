@@ -17,6 +17,7 @@ import black.mode
 import inflection
 import libcst as cst
 
+from ..abi import encode_function_signature
 from ..version import MOONWORM_VERSION
 
 CONTRACT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "contract.py.template")
@@ -186,7 +187,9 @@ PROTECTED_ARG_NAMES: Set[str] = {
 }
 
 
-def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+def function_spec(
+    function_abi: Dict[str, Any], is_overloaded: bool = False
+) -> Dict[str, Dict[str, Any]]:
     """
     Accepts function interface definitions from smart contract ABIs. An example input:
     {
@@ -226,6 +229,11 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         ],
         "transact": False,
     }
+
+    If the caller provides `is_overloaded`, the function signature is suffixed to the method and CLI
+    names with the appropriate dashes. No changes are made to the ABI name itself. For example, generated
+    brownie interfaces rely on brownie's internal deduplication logic (based on argument types) to delegate
+    behavior to the right version of the brownie contract method.
     """
     abi_name = function_abi.get("name")
     if abi_name is None:
@@ -234,6 +242,11 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     underscored_name = inflection.underscore(abi_name)
     function_name = normalize_abi_name(underscored_name)
     cli_name = inflection.dasherize(underscored_name)
+
+    if is_overloaded:
+        signature = encode_function_signature(function_abi)
+        function_name += f"_{signature}"
+        cli_name += f"-{signature}"
 
     default_input_name = "arg"
     default_counter = 1
@@ -275,7 +288,8 @@ def function_spec(function_abi: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         inputs.append(input_spec)
 
     transact = True
-    if function_abi.get("stateMutability") == "view":
+    state_mutability = function_abi.get("stateMutability", "").lower()
+    if state_mutability == "view" or state_mutability == "pure":
         transact = False
 
     spec = {
