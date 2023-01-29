@@ -926,7 +926,11 @@ def generate_brownie_cli(
     overloaded_functions = get_overloaded_functions(abi)
     handlers.extend(
         [
-            generate_cli_handler(function_abi, contract_name, function_abi.get("name") in overloaded_functions)
+            generate_cli_handler(
+                function_abi,
+                contract_name,
+                function_abi.get("name") in overloaded_functions,
+            )
             for function_abi in abi
             if function_abi.get("type") == "function"
             and function_abi.get("name") is not None
