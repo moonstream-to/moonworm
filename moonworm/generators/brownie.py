@@ -7,7 +7,7 @@ The entrypoint to code generation is [`generate_brownie_interface`][moonworm.gen
 import copy
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import libcst as cst
 from libcst._nodes.statement import SimpleStatementLine
@@ -31,6 +31,21 @@ except Exception as e:
         f"WARNING: Could not load cli template from ({BROWNIE_INTERFACE_TEMPLATE_PATH})/({BROWNIE_INTERFACE_PROD_TEMPLATE_PATH}):"
     )
     logging.warn(e)
+
+
+def get_overloaded_functions(abi: List[Dict[str, Any]]) -> Set[str]:
+    """
+    Return a set containing the function names of all overloaded functions.
+    """
+    function_name_counters: Dict[str, int] = {}
+    for item in abi:
+        if item["type"] != "function":
+            continue
+        if item["name"] in function_name_counters:
+            function_name_counters[item["name"]] += 1
+        else:
+            function_name_counters[item["name"]] = 1
+    return {name for name, count in function_name_counters.items() if count > 1}
 
 
 def generate_brownie_contract_class(
@@ -78,6 +93,8 @@ def generate_brownie_contract_class(
     contract_constructor = get_constructor(abi)
     contract_constructor["name"] = "constructor"
 
+    overloaded_functions = get_overloaded_functions(abi)
+
     class_functions = (
         [class_constructor]
         + [
@@ -86,7 +103,9 @@ def generate_brownie_contract_class(
             generate_verify_contract(),
         ]
         + [
-            generate_brownie_contract_function(function)
+            generate_brownie_contract_function(
+                function, function.get("name", "") in overloaded_functions
+            )
             for function in abi
             if function["type"] == "function"
         ]
@@ -187,8 +206,10 @@ def generate_assert_contract_is_instantiated() -> cst.FunctionDef:
     return function_def
 
 
-def generate_brownie_contract_function(func_object: Dict[str, Any]) -> cst.FunctionDef:
-    spec = function_spec(func_object)
+def generate_brownie_contract_function(
+    func_object: Dict[str, Any], is_overloaded: bool = False
+) -> cst.FunctionDef:
+    spec = function_spec(func_object, is_overloaded)
     func_params = []
     func_params.append(cst.Param(name=cst.Name("self")))
 
@@ -516,7 +537,7 @@ def generate_verify_contract_handler(contract_name: str) -> Optional[cst.Functio
 
 
 def generate_cli_handler(
-    function_abi: Dict[str, Any], contract_name: str
+    function_abi: Dict[str, Any], contract_name: str, is_overloaded: bool = False
 ) -> Optional[cst.FunctionDef]:
     """
     Generates a handler which translates parsed command line arguments to method calls on the generated
@@ -525,7 +546,7 @@ def generate_cli_handler(
     Returns None if it is not appropriate for the given function to have a handler (e.g. fallback or
     receive). constructor is handled separately with a deploy handler.
     """
-    spec = function_spec(function_abi)
+    spec = function_spec(function_abi, is_overloaded)
     function_name = spec["method"]
 
     function_body_raw: List[cst.CSTNode] = []
@@ -734,8 +755,16 @@ def generate_cli_generator(
         "inputs": [],
     }
 
+    overloaded_functions = get_overloaded_functions(abi)
+
     specs: List[Dict[str, Any]] = [constructor_spec, verify_contract_spec]
-    specs.extend([function_spec(item) for item in abi if item["type"] == "function"])
+    specs.extend(
+        [
+            function_spec(item, item.get("name", "") in overloaded_functions)
+            for item in abi
+            if item["type"] == "function"
+        ]
+    )
 
     for spec in specs:
         subparser_statements: List[SimpleStatementLine] = [cst.Newline()]
@@ -893,9 +922,15 @@ def generate_brownie_cli(
         add_deploy_handler,
         add_verify_contract_handler,
     ]
+
+    overloaded_functions = get_overloaded_functions(abi)
     handlers.extend(
         [
-            generate_cli_handler(function_abi, contract_name)
+            generate_cli_handler(
+                function_abi,
+                contract_name,
+                function_abi.get("name") in overloaded_functions,
+            )
             for function_abi in abi
             if function_abi.get("type") == "function"
             and function_abi.get("name") is not None
