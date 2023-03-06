@@ -16,6 +16,9 @@ try:
         XDaiBlock,
         XDaiLabel,
         XDaiTransaction,
+        WyrmBlock,
+        Wyrmlabel,
+        WyrmTransaction,
     )
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")
@@ -47,5 +50,10 @@ MODELS: Dict[Network, Dict[str, Base]] = {
         "blocks": XDaiBlock,
         "labels": XDaiLabel,
         "transactions": XDaiTransaction,
+    },
+    Network.wyrm: {
+        "blocks": WyrmBlock,
+        "labels": Wyrmlabel,
+        "transactions": WyrmTransaction,
     },
 }

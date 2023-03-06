@@ -17,6 +17,7 @@ from .networks import (
     PolygonLabel,
     PolygonTransaction,
     XDaiTransaction,
+    WyrmTransaction,
     yield_db_session_ctx,
 )
 from .utils import Network
@@ -82,7 +83,11 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
     @staticmethod
     def _transform_to_w3_tx(
         tx_raw: Union[
-            EthereumTransaction, MumbaiTransaction, PolygonTransaction, XDaiTransaction
+            EthereumTransaction,
+            MumbaiTransaction,
+            PolygonTransaction,
+            XDaiTransaction,
+            WyrmTransaction,
         ],
     ) -> Dict[str, Any]:
         tx = {

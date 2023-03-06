@@ -6,3 +6,4 @@ class Network(Enum):
     polygon = "polygon"
     mumbai = "mumbai"
     xdai = "xdai"
+    wyrm = "wyrm"
