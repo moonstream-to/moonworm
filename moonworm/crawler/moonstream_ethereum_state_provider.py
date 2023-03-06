@@ -4,22 +4,13 @@ from typing import Any, Dict, List, Optional, Union
 from eth_typing.evm import ChecksumAddress
 from hexbytes.main import HexBytes
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.base import NO_ARG
 from web3 import Web3
 
 from .ethereum_state_provider import EthereumStateProvider
 from .networks import (
     MODELS,
-    EthereumLabel,
-    EthereumTransaction,
-    MumbaiLabel,
-    MumbaiTransaction,
-    PolygonLabel,
-    PolygonTransaction,
-    WyrmTransaction,
-    XDaiTransaction,
-    yield_db_session_ctx,
     Network,
+    tx_raw_types,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -82,13 +73,7 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
 
     @staticmethod
     def _transform_to_w3_tx(
-        tx_raw: Union[
-            EthereumTransaction,
-            MumbaiTransaction,
-            PolygonTransaction,
-            XDaiTransaction,
-            WyrmTransaction,
-        ],
+        tx_raw: tx_raw_types,
     ) -> Dict[str, Any]:
         tx = {
             "blockNumber": tx_raw.block_number,
