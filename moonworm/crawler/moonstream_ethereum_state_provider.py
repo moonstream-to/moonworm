@@ -12,6 +12,7 @@ from .networks import MODELS, Network, tx_raw_types
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # TODO(yhtiyar) When getting block from db, filter it by `to` address, it will be faster
 # also get blocks in bunch
 class MoonstreamEthereumStateProvider(EthereumStateProvider):

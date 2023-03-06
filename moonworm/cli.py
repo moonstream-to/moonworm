@@ -183,7 +183,6 @@ def handle_watch(args: argparse.Namespace) -> None:
                 state_provider.clear_db_session()
 
     else:
-
         watch_contract(
             web3=web3,
             state_provider=Web3StateProvider(web3),
