@@ -19,8 +19,8 @@ from .networks import (
     WyrmTransaction,
     XDaiTransaction,
     yield_db_session_ctx,
+    Network,
 )
-from .utils import Network
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

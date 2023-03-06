@@ -1,9 +1,10 @@
 import argparse
 import json
 import os
-from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from shutil import copyfile
+from types import MappingProxyType
+from typing import Any
 
 from web3.main import Web3
 from web3.middleware import geth_poa_middleware
@@ -11,8 +12,7 @@ from web3.middleware import geth_poa_middleware
 from moonworm.crawler.ethereum_state_provider import Web3StateProvider
 from moonworm.watch import watch_contract
 
-from .contracts import CU, ERC20, ERC721, CULands
-from .crawler.utils import Network
+from .contracts import CU, ERC20, ERC721
 from .deployment import find_deployment_block
 from .generators.basic import (
     generate_contract_cli_content,
@@ -154,6 +154,9 @@ def handle_watch(args: argparse.Namespace) -> None:
     if args.db:
         if args.network is None:
             raise ValueError("Please specify --network")
+
+        from .crawler.networks import Network
+
         network = Network.__members__[args.network]
 
         from .crawler.moonstream_ethereum_state_provider import (
@@ -215,6 +218,14 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     """
     Generates the command-line argument parser for the "moonworm" command.
     """
+    networks: MappingProxyType[Any, Any] = MappingProxyType({})
+    try:
+        from .crawler.networks import Network
+
+        networks = Network.__members__
+    except Exception:
+        pass
+
     parser = argparse.ArgumentParser(description="Moonworm: Manage your smart contract")
     parser.add_argument(
         "-v",
@@ -256,7 +267,7 @@ def generate_argument_parser() -> argparse.ArgumentParser:
 
     watch_parser.add_argument(
         "--network",
-        choices=Network.__members__,
+        choices=networks,
         default=None,
         help="Network name that represents models from db. If --db is set, required",
     )

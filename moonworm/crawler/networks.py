@@ -14,46 +14,16 @@ try:
         PolygonLabel,
         PolygonTransaction,
         WyrmBlock,
-        Wyrmlabel,
+        WyrmLabel,
         WyrmTransaction,
         XDaiBlock,
         XDaiLabel,
         XDaiTransaction,
     )
+    from moonstreamdb.moonworm import Network, MODELS, tx_raw_types
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")
     print("to enable, run: `pip install moonworm[moonstream]`")
     raise ImportError(
         "moonstreamdb not installed, to install, run: `pip install moonworm[moonstream]`"
     )
-
-
-from .utils import Network
-
-MODELS: Dict[Network, Dict[str, Base]] = {
-    Network.ethereum: {
-        "blocks": EthereumBlock,
-        "labels": EthereumLabel,
-        "transactions": EthereumTransaction,
-    },
-    Network.mumbai: {
-        "blocks": MumbaiBlock,
-        "labels": MumbaiLabel,
-        "transactions": MumbaiTransaction,
-    },
-    Network.polygon: {
-        "blocks": PolygonBlock,
-        "labels": PolygonLabel,
-        "transactions": PolygonTransaction,
-    },
-    Network.xdai: {
-        "blocks": XDaiBlock,
-        "labels": XDaiLabel,
-        "transactions": XDaiTransaction,
-    },
-    Network.wyrm: {
-        "blocks": WyrmBlock,
-        "labels": Wyrmlabel,
-        "transactions": WyrmTransaction,
-    },
-}
