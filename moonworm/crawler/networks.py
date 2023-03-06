@@ -20,7 +20,7 @@ try:
         XDaiLabel,
         XDaiTransaction,
     )
-    from moonstreamdb.moonworm import Network, MODELS, tx_raw_types
+    from moonstreamdb.moonworm import MODELS, Network, tx_raw_types
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")
     print("to enable, run: `pip install moonworm[moonstream]`")

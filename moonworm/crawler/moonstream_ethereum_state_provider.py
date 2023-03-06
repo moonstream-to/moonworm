@@ -7,11 +7,7 @@ from sqlalchemy.orm import Session
 from web3 import Web3
 
 from .ethereum_state_provider import EthereumStateProvider
-from .networks import (
-    MODELS,
-    Network,
-    tx_raw_types,
-)
+from .networks import MODELS, Network, tx_raw_types
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
