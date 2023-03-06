@@ -13,12 +13,12 @@ try:
         PolygonBlock,
         PolygonLabel,
         PolygonTransaction,
-        XDaiBlock,
-        XDaiLabel,
-        XDaiTransaction,
         WyrmBlock,
         Wyrmlabel,
         WyrmTransaction,
+        XDaiBlock,
+        XDaiLabel,
+        XDaiTransaction,
     )
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")

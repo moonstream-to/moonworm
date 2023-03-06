@@ -16,8 +16,8 @@ from .networks import (
     MumbaiTransaction,
     PolygonLabel,
     PolygonTransaction,
-    XDaiTransaction,
     WyrmTransaction,
+    XDaiTransaction,
     yield_db_session_ctx,
 )
 from .utils import Network
