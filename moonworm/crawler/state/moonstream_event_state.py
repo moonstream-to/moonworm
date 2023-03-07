@@ -1,4 +1,4 @@
-from moonstreamdb.models import EthereumBlock, EthereumLabel
+from ..networks import EthereumBlock, EthereumLabel
 from sqlalchemy.orm import Query, Session
 from web3 import Web3
 

@@ -3,24 +3,11 @@ from typing import Dict
 try:
     from moonstreamdb.db import yield_db_session_ctx
     from moonstreamdb.models import (
-        Base,
         EthereumBlock,
         EthereumLabel,
-        EthereumTransaction,
-        MumbaiBlock,
-        MumbaiLabel,
-        MumbaiTransaction,
-        PolygonBlock,
-        PolygonLabel,
-        PolygonTransaction,
-        WyrmBlock,
-        WyrmLabel,
-        WyrmTransaction,
-        XDaiBlock,
-        XDaiLabel,
-        XDaiTransaction,
-    )
-    from moonstreamdb.moonworm import MODELS, Network, tx_raw_types
+    )  # state/moonstream_event_state dependency maybe removed in the future
+    from moonstreamdb.networks import MODELS, Network, tx_raw_types
+
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")
     print("to enable, run: `pip install moonworm[moonstream]`")
