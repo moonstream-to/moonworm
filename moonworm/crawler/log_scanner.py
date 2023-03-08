@@ -303,7 +303,6 @@ class EventScanner:
         all_processed = []
 
         for event_type in self.events:
-
             # Callable that takes care of the underlying web3 call
             def _fetch_events(_start_block, _end_block):
                 return _fetch_events_chunk(
@@ -385,7 +384,6 @@ class EventScanner:
         all_processed = []
 
         while current_block <= end_block:
-
             self.state.start_chunk(current_block, chunk_size)
 
             # Print some diagnostics to logs to try to fiddle with real world JSON-RPC API performance

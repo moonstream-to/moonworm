@@ -341,7 +341,6 @@ def generate_contract_constructor_function(
 
 
 def generate_contract_function(func_object: Dict[str, Any]) -> cst.FunctionDef:
-
     default_param_name = "arg"
     default_counter = 1
     func_params = []
