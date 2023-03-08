@@ -2,10 +2,10 @@ from typing import Dict
 
 try:
     from moonstreamdb.db import yield_db_session_ctx
-    from moonstreamdb.models import (
+    from moonstreamdb.models import (  # state/moonstream_event_state dependency maybe removed in the future
         EthereumBlock,
         EthereumLabel,
-    )  # state/moonstream_event_state dependency maybe removed in the future
+    )
     from moonstreamdb.networks import MODELS, Network, tx_raw_types
 
 except ImportError:
