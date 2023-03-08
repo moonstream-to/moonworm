@@ -22,7 +22,7 @@ setup(
     ],
     extras_require={
         "dev": ["isort", "mypy", "wheel", "web3>=5.27.0"],
-        "moonstream": ["moonstreamdb>= 0.3.3"],
+        "moonstream": ["moonstreamdb>=0.3.3"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
     description="moonworm: Generate a command line interface to any Ethereum smart contract",
