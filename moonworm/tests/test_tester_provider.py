@@ -52,7 +52,6 @@ class MoonwormEthTesterTestCase(unittest.TestCase):
         send_value,
         tx_receipt,
     ):
-
         assert receiver_current_balance == receiver_previous_balance + send_value
         assert (
             sender_current_balance
@@ -60,7 +59,6 @@ class MoonwormEthTesterTestCase(unittest.TestCase):
         )
 
     def test_submit_transaction(self) -> None:
-
         sender = Web3.toChecksumAddress(PK_ADDRESS)
         self.web3.eth.send_transaction
         receiver = Web3.toChecksumAddress(self.web3.eth.accounts[1])
@@ -95,7 +93,6 @@ class MoonwormEthTesterTestCase(unittest.TestCase):
         )
 
     def test_submit_signed_transaction(self) -> None:
-
         sender = Web3.toChecksumAddress(PK_ADDRESS)
         self.web3.eth.send_transaction
         receiver = Web3.toChecksumAddress(self.web3.eth.accounts[1])

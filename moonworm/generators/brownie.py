@@ -235,7 +235,6 @@ def generate_brownie_contract_function(
             f"return self.contract.{func_raw_name}({','.join(param_names)})"
         )
     else:
-
         func_params.append(
             cst.Param(
                 name=cst.Name(value="block_number"),
