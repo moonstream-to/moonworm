@@ -18,7 +18,7 @@ setup(
         "pysha3<2.0.0,>=1.0.0",
         "tqdm",
         "typing-extensions",
-        "web3>=5.27.0",
+        "web3>=6.1.0",
     ],
     extras_require={
         "dev": ["isort", "mypy", "wheel", "web3>=5.27.0"],

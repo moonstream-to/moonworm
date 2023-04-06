@@ -62,7 +62,7 @@ class Web3StateProvider(EthereumStateProvider):
     def _get_block(self, block_number: int) -> Dict[str, Any]:
         if block_number in self.blocks_cache:
             return self.blocks_cache[block_number]
-        block = self.w3.eth.getBlock(block_number, full_transactions=True)
+        block = self.w3.eth.get_block(block_number, full_transactions=True)
 
         # clear cache if it grows too large
         if len(self.blocks_cache) > 50:

@@ -6,7 +6,7 @@ from typing import Any, Dict, Union
 
 from eth_typing.evm import Address, ChecksumAddress
 from web3 import Web3
-from web3.contract import ContractFunction
+from web3.contract.contract import ContractFunction
 
 from .web3_util import *
 

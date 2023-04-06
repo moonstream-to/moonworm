@@ -33,7 +33,7 @@ def init_web3(ipc_path: str) -> Web3:
 def init_contract(web3: Web3, abi: Dict[str, Any], address: Optional[str]) -> Contract:
     checksum_address: Optional[ChecksumAddress] = None
     if address is not None:
-        checksum_address = web3.toChecksumAddress(address)
+        checksum_address = web3.to_checksum_address(address)
     return web3.eth.contract(address=checksum_address, abi=abi)
 
 def make_function_call(contract: Contract, function_name: str, *args):
@@ -102,7 +102,7 @@ def handle_args(args: argparse.Namespace):
         if args.contract_address is None:
             print("Contract address was not passed from arguments")
             args.contract_address = input("Enter contract address you want to call: ")
-        contract_address = web3.toChecksumAddress(args.contract_address)
+        contract_address = web3.to_checksum_address(args.contract_address)
         contract = web3.eth.contract(address=contract_address, abi=CONTRACT_ABI)
         function_name = kwargs["function_name"]
         del kwargs["function_name"]
@@ -116,7 +116,7 @@ def handle_args(args: argparse.Namespace):
         if args.contract_address is None:
             print("Contract address was not passed from arguments")
             args.contract_address = input("Enter contract address you want to transact: ")
-        contract_address = web3.toChecksumAddress(args.contract_address)
+        contract_address = web3.to_checksum_address(args.contract_address)
         contract = web3.eth.contract(address=contract_address, abi=CONTRACT_ABI)
         function_name = kwargs["function_name"]
         del kwargs["function_name"]
@@ -153,7 +153,7 @@ def handle_args(args: argparse.Namespace):
             deployer_private_key=pk,
             constructor_arguments=constructor_args,
         )
-        print(f"Tx hash of deployment: {{web3.toHex(tx_hash)}}")
+        print(f"Tx hash of deployment: {{web3.to_hex(tx_hash)}}")
         print(f"Address of deployed_contract: {{contract_address}}")
 
 def main() -> None:

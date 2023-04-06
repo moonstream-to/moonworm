@@ -3,7 +3,8 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+import traceback
 
 from eth_abi.codec import ABICodec
 from eth_typing.evm import ChecksumAddress
@@ -113,7 +114,7 @@ def _fetch_events_chunk(
             raw_event = get_event_data(codec, event_abi, log)
             event = {
                 "event": raw_event["event"],
-                "args": json.loads(Web3.toJSON(utfy_dict(dict(raw_event["args"])))),
+                "args": json.loads(Web3.to_json(utfy_dict(dict(raw_event["args"])))),
                 "address": raw_event["address"],
                 "blockNumber": raw_event["blockNumber"],
                 "transactionHash": raw_event["transactionHash"].hex(),
@@ -195,7 +196,7 @@ class EventScanner:
         self.checksum_addresses = []
         if addresses:
             for address in addresses:
-                self.checksum_addresses.append(web3.toChecksumAddress(address))
+                self.checksum_addresses.append(web3.to_checksum_address(address))
 
         # Our JSON-RPC throttling parameters
         self.min_scan_chunk_size = 10  # 12 s/block = 120 seconds period
@@ -216,7 +217,7 @@ class EventScanner:
             # Returning None since, config set to skip getting block timestamp data
             return None
         try:
-            block_info = self.web3.eth.getBlock(block_num)
+            block_info = self.web3.eth.get_block(block_num)
         except BlockNotFound:
             # Block was not mined yet,
             # minor chain reorganisation?
@@ -247,13 +248,24 @@ class EventScanner:
         return self.web3.eth.blockNumber - 1
 
     def get_last_scanned_block(self) -> int:
+        """Get the last scanned block number."""
+
+        if self.state is None:
+            return 0
+
         return self.state.get_last_scanned_block()
 
     def delete_potentially_forked_block_data(self, after_block: int):
         """Purge old data in the case of blockchain reorganisation."""
+
+        if self.state is None:
+            return
+
         self.state.delete_data(after_block)
 
-    def estimate_next_chunk_size(self, current_chuck_size: int, event_found_count: int):
+    def estimate_next_chunk_size(
+        self, current_chuck_size: Union[int, float], event_found_count: int
+    ):
         """Try to figure out optimal chunk size
 
         Our scanner might need to scan the whole blockchain for all events
@@ -343,6 +355,8 @@ class EventScanner:
                     evt["event"],
                     evt["blockNumber"],
                 )
+                if self.state is None:
+                    raise Exception("State is not initialized")
                 processed = self.state.process_event(block_when, evt)
                 all_processed.append(processed)
 
@@ -377,14 +391,16 @@ class EventScanner:
 
         # Scan in chunks, commit between
         chunk_size = start_chunk_size
-        last_scan_duration = last_logs_found = 0
+        last_scan_duration = last_logs_found = 0.0
         total_chunks_scanned = 0
 
         # All processed entries we got on this scan cycle
         all_processed = []
 
         while current_block <= end_block:
-            self.state.start_chunk(current_block, chunk_size)
+            if self.state is None:
+                raise Exception("State is not initialized")
+            self.state.start_chunk(current_block, chunk_size)  # type: ignore
 
             # Print some diagnostics to logs to try to fiddle with real world JSON-RPC API performance
             estimated_end_block = current_block + chunk_size

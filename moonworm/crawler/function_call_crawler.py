@@ -111,7 +111,7 @@ def utfy_dict(dic):
         return dic
 
     elif isinstance(dic, bytes):
-        return Web3.toHex(dic)
+        return Web3.to_hex(dic)
 
     elif isinstance(dic, tuple):
         return tuple(utfy_dict(x) for x in dic)
@@ -148,7 +148,7 @@ class FunctionCallCrawler:
         self.contract = Web3().eth.contract(abi=self.contract_abi)
         self.on_decode_error = on_decode_error
         self.whitelisted_methods = {
-            Web3.toHex(function_abi_to_4byte_selector(a)) for a in self.contract_abi
+            Web3.to_hex(function_abi_to_4byte_selector(a)) for a in self.contract_abi
         }
 
     def process_transaction(self, transaction: Dict[str, Any]):

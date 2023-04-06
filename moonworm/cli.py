@@ -172,7 +172,7 @@ def handle_watch(args: argparse.Namespace) -> None:
                 watch_contract(
                     web3=web3,
                     state_provider=state_provider,
-                    contract_address=web3.toChecksumAddress(args.contract),
+                    contract_address=web3.to_checksum_address(args.contract),
                     contract_abi=contract_abi,
                     num_confirmations=args.confirmations,
                     start_block=args.start,
@@ -186,7 +186,7 @@ def handle_watch(args: argparse.Namespace) -> None:
         watch_contract(
             web3=web3,
             state_provider=Web3StateProvider(web3),
-            contract_address=web3.toChecksumAddress(args.contract),
+            contract_address=web3.to_checksum_address(args.contract),
             contract_abi=contract_abi,
             num_confirmations=args.confirmations,
             start_block=args.start,
@@ -418,7 +418,7 @@ def generate_argument_parser() -> argparse.ArgumentParser:
     find_deployment_parser.add_argument(
         "-c",
         "--contract",
-        type=Web3.toChecksumAddress,
+        type=Web3.to_checksum_address,
         required=True,
         help="Contract address",
     )

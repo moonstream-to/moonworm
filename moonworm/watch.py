@@ -119,13 +119,13 @@ def watch_contract(
         state,
         state_provider,
         contract_abi,
-        [web3.toChecksumAddress(contract_address)],
+        [web3.to_checksum_address(contract_address)],
     )
 
     event_abis = [item for item in contract_abi if item["type"] == "event"]
 
     if start_block is None:
-        current_block = web3.eth.blockNumber - num_confirmations * 2
+        current_block = web3.eth.block_number - num_confirmations * 2
     else:
         current_block = start_block
 
@@ -139,7 +139,7 @@ def watch_contract(
         while end_block is None or current_block <= end_block:
             time.sleep(sleep_time)
             until_block = min(
-                web3.eth.blockNumber - num_confirmations,
+                web3.eth.block_number - num_confirmations,
                 current_block + current_batch_size,
             )
             if end_block is not None:
