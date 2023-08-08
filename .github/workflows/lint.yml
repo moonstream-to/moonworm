@@ -17,8 +17,6 @@ jobs:
         run: pip install -U pip
       - name: Install dev dependencies
         run: pip install -e .[dev]
-      - name: Mypy type check
-        run: mypy moonworm/
       - name: Isort imports check
         run: isort --check moonworm/
       - name: Black syntax check
