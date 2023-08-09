@@ -15,7 +15,7 @@ setup(
         "black",
         "inflection",
         "libcst",
-        "pysha3<2.0.0,>=1.0.0",
+        "pysha3<2.0.0,>=1.0.0; python_version < '3.6'",
         "tqdm",
         "typing-extensions",
         "web3>=5.27.0",
@@ -37,7 +37,7 @@ setup(
         "Topic :: Software Development :: Libraries",
     ],
     python_requires=">=3.6",
-    url="https://github.com/bugout-dev/moonworm/",
+    url="https://github.com/moonstream-to/moonworm/",
     entry_points={"console_scripts": ["moonworm=moonworm.cli:main"]},
     include_package_data=True,
 )
