@@ -15,7 +15,7 @@ setup(
         "black",
         "inflection",
         "libcst",
-        "pysha3<2.0.0,>=1.0.0",
+        "pysha3<2.0.0,>=1.0.0; python_version < '3.6'",
         "tqdm",
         "typing-extensions",
         "web3>=5.27.0",

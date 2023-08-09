@@ -95,11 +95,11 @@ def normalize_abi_name(name: str) -> str:
 
 
 def python_type(evm_type: str) -> List[str]:
-    if evm_type.endswith("]"):
+    if evm_type.endswith("]") and not evm_type.endswith("][]"):
         return ["List"]
-    if evm_type.startswith(("uint", "int")):
+    if evm_type.startswith(("uint", "int")) and "[" not in evm_type:
         return ["int"]
-    if evm_type.startswith(("int", "int")):
+    if evm_type.startswith(("int", "int")) and "[" not in evm_type:
         return ["int"]
     elif evm_type.startswith("bytes"):
         return ["bytes"]
