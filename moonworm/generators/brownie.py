@@ -560,7 +560,10 @@ def generate_cli_handler(
 
     # If a transaction is required, extract transaction parameters from CLI
     requires_transaction = True
-    if function_abi["stateMutability"] == "view" or function_abi["stateMutability"] == "pure":
+    if (
+        function_abi["stateMutability"] == "view"
+        or function_abi["stateMutability"] == "pure"
+    ):
         requires_transaction = False
 
     if requires_transaction:
