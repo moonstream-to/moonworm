@@ -6,25 +6,26 @@ Moonworm is a set of tools that helps you develop/analyze blockchain dapps. Pump
 
 1. `moonworm watch` -  Tool to monitor and crawl(index) decoded smart contract data. It gets you historic/on going smart contract’s decoded `events` and `transactions`. No sweat, just provide `abi` and smart contract’s address and get stream of data. With this tool you can: analyze  incidents, set up alerting, build datasets, write sniping bots, etc.
 2. `moonworm generate-brownie` - Brownie on steroids. Generate python interface and cli for your smart contracts in “one click”, focus on smart contract development, `moonworm` will do the rest. In addition, you will have syntax highlights which will boost your speed on writing tests.
-
 ![moonworm](https://user-images.githubusercontent.com/19771534/164013435-74a9e816-74ef-4e05-a7e5-1f7f620896e7.jpg)
-
-
-1. `moonworm generate` - cli/ python interface generator for pure `web3` library. In case you prefer not to use `brownie`
+3. `moonworm generate` - cli/ python interface generator for pure `web3` library. In case you prefer not to use `brownie`
 
 ## Setup:
 
 ```bash
-pip install moonworm 
+pip install moonworm
 ```
 
+## Guides
+
+- [How to `watch`](./docs/how-to-watch.md) - How to use `moonworm watch` to get data about smart contract
+activity.
 
 ## Usage:
 
 ### `moonworm watch`:
 
 ```bash
-moonworm watch --abi <Path to abi file> --contract <Contract address> --web3 <Web3 provider url> --start <Start block> --end <End block>    
+moonworm watch --abi <Path to abi file> --contract <Contract address> --web3 <Web3 provider url> --start <Start block> --end <End block>
 ```
 
 Arguments:
@@ -44,7 +45,7 @@ Optional args:
 - `--only-events` Flag, if set: only watches events. Default=`False`
 - `--min-blocks-batch MIN_BLOCKS_BATCH` Minimum number of blocks to batch together. Default=100
 - `--max-blocks-batch MAX_BLOCKS_BATCH` Maximum number of blocks to batch together. Default=1000 **Note**: it is used only in `--only-events` mode
-- 
+-
 
 ### `moonworm generate-brownie`:
 
@@ -61,9 +62,9 @@ Arguments:
 **NOTE**: For better experience put generated files in sub directory of your brownie project. As an example:
 
 1. `cd myBrownieProject`
-2. `moonworm generate-brownie -p . -o generated/ -n MyContract` 
+2. `moonworm generate-brownie -p . -o generated/ -n MyContract`
 
-      3. Run the generated cli of the contract: `python3 generated/Mycontract.py -h` 
+      3. Run the generated cli of the contract: `python3 generated/Mycontract.py -h`
 
 ### `moonworm generate`:
 
@@ -79,7 +80,7 @@ Arguments:
 - `-name/-n NAME` Prefix name for generated files
 - `--cli` Flag to generate cli for given smart contract abi
 
- 
+
 
 ## FAQ:
 
