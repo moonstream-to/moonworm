@@ -113,6 +113,8 @@ def watch_contract(
     None. Results are printed to stdout and, if an outfile has been provided, also to the file.
     """
 
+    contract_abi = [item for item in contract_abi if item.get("name") is not None]
+
     current_batch_size = min_blocks_batch
     state = MockState()
     crawler = FunctionCallCrawler(
