@@ -21,14 +21,19 @@ BROWNIE_INTERFACE_TEMPLATE_PATH = os.path.join(
 BROWNIE_INTERFACE_PROD_TEMPLATE_PATH = os.path.join(
     os.path.dirname(__file__), "brownie_contract_prod.py.template"
 )
+BROWNIE_INTERFACE_FOUNDRY_TEMPLATE_PATH = os.path.join(
+    os.path.dirname(__file__), "brownie_contract_foundry.py.template"
+)
 try:
     with open(BROWNIE_INTERFACE_TEMPLATE_PATH, "r") as ifp:
         BROWNIE_INTERFACE_TEMPLATE = ifp.read()
     with open(BROWNIE_INTERFACE_PROD_TEMPLATE_PATH, "r") as ifp:
         BROWNIE_INTERFACE_PROD_TEMPLATE = ifp.read()
+    with open(BROWNIE_INTERFACE_FOUNDRY_TEMPLATE_PATH, "r") as ifp:
+        BROWNIE_INTERFACE_FOUNDRY_TEMPLATE = ifp.read()
 except Exception as e:
     logging.warn(
-        f"WARNING: Could not load cli template from ({BROWNIE_INTERFACE_TEMPLATE_PATH})/({BROWNIE_INTERFACE_PROD_TEMPLATE_PATH}):"
+        f"WARNING: Could not load cli template from ({BROWNIE_INTERFACE_TEMPLATE_PATH})/({BROWNIE_INTERFACE_PROD_TEMPLATE_PATH})/({BROWNIE_INTERFACE_FOUNDRY_TEMPLATE_PATH}):"
     )
     logging.warn(e)
 
@@ -962,6 +967,8 @@ def generate_brownie_interface(
     cli: bool = True,
     format: bool = True,
     prod: bool = False,
+    foundry: bool = True,
+    intermediate_dirs: Optional[List[str]] = None,
 ) -> str:
     """
     Generates Python code which allows you to interact with a smart contract with a given ABI, build data, and a given name.
@@ -988,6 +995,11 @@ def generate_brownie_interface(
     7. `prod`: If True, creates a self-contained file. Generated code will not require reference to an
     existing brownie project at its runtime.
 
+    8. `foundry`: If True, assumes a Foundry project structure.
+
+    9. intermediate_dirs: Currently only used for Foundry projects. Path to build file via intermediate
+    build subdirectory which takes the name of the Solidity file that the contract is implemented in.
+
 
     ## Outputs
     The generated code as a string.
@@ -1011,6 +1023,14 @@ def generate_brownie_interface(
             contract_body=contract_body,
             moonworm_version=MOONWORM_VERSION,
         )
+    elif foundry:
+        content = BROWNIE_INTERFACE_FOUNDRY_TEMPLATE.format(
+            contract_body=contract_body,
+            moonworm_version=MOONWORM_VERSION,
+            relative_path=relative_path,
+            build_subdir=intermediate_dirs[0],
+        )
+
     else:
         content = BROWNIE_INTERFACE_TEMPLATE.format(
             contract_body=contract_body,
