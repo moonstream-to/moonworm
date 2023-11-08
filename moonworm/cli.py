@@ -106,15 +106,33 @@ def handle_brownie_generate(args: argparse.Namespace):
 
     project_directory = args.project
     build_directory = os.path.join(project_directory, "build", "contracts")
+    intermediate_dirs: List[str] = []
+    if args.foundry:
+        build_directory = os.path.join(project_directory, "out")
 
     build_file_path = os.path.join(build_directory, f"{args.name}.json")
-    if not os.path.isfile(build_file_path):
-        raise IOError(
-            f"File does not exist: {build_file_path}. Maybe you have to compile the smart contracts?"
-        )
+    if args.foundry:
+        if args.sol_filename is not None:
+            build_file_path = os.path.join(
+                build_directory, args.sol_filename, f"{args.name}.json"
+            )
+            intermediate_dirs.append(args.sol_filename)
+        else:
+            build_file_path = os.path.join(
+                build_directory, f"{args.name}.sol", f"{args.name}.json"
+            )
+            intermediate_dirs.append(f"{args.name}.sol")
+    else:
+        if not os.path.isfile(build_file_path):
+            raise IOError(
+                f"File does not exist: {build_file_path}. Maybe you have to compile the smart contracts?"
+            )
 
     with open(build_file_path, "r") as ifp:
         build = json.load(ifp)
+
+    if args.foundry:
+        build["contractName"] = args.name
 
     relpath = os.path.relpath(project_directory, args.outdir)
     splitted_relpath = [
@@ -129,6 +147,8 @@ def handle_brownie_generate(args: argparse.Namespace):
         args.name,
         splitted_relpath_string,
         prod=args.prod,
+        foundry=args.foundry,
+        intermediate_dirs=intermediate_dirs,
     )
     write_file(interface, os.path.join(args.outdir, args.name + ".py"))
 
@@ -355,12 +375,22 @@ def generate_argument_parser() -> argparse.ArgumentParser:
         "-p",
         "--project",
         required=True,
-        help=f"Path to brownie project directory",
+        help=f"Path to brownie/foundry project directory",
+    )
+    generate_brownie_parser.add_argument(
+        "--foundry",
+        action="store_true",
+        help="Project is using Foundry (if not specified, the assumption is that the project uses brownie)",
+    )
+    generate_brownie_parser.add_argument(
+        "--sol-filename",
+        required=False,
+        help="Name of solidity file containing your contract; required if --foundry, moonworm will look for build artifacts in out/<this filename>, defaults to the contract name if not provided",
     )
     generate_brownie_parser.add_argument(
         "--prod",
         action="store_true",
-        help="Generate shippable python interface, in which abi and bytecode will be included inside the generated file",
+        help="Generate self-contained python interface, in which ABI and bytecode will be included inside the generated file",
     )
     generate_brownie_parser.set_defaults(func=handle_brownie_generate)
 
