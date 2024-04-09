@@ -839,6 +839,13 @@ def generate_cli_generator(
                         value=cst.parse_expression("eval"),
                     ),
                 )
+            elif param["type"] == "tuple[]":
+                call_args.append(
+                    cst.Arg(
+                        keyword=cst.Name(value="type"),
+                        value=cst.parse_expression("eval"),
+                    ),
+                )
             elif param["type"] == "Any":
                 # In general case, we just use a Python `eval` to parse the input from the command line.
                 # This is similar to the way we handle `tuple` arguments.
