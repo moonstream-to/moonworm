@@ -3,6 +3,7 @@ Allows users to inspect the conditions under which a smart contract was deployed
 
 The entrypoint for this functionality is [`find_deployment_block`][moonworm.deployment.find_deployment_block].
 """
+
 import logging
 import os
 import time
