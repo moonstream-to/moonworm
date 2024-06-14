@@ -71,7 +71,7 @@ class Web3StateProvider(EthereumStateProvider):
         block = self.w3.eth.getBlock(block_number, full_transactions=True)
 
         # clear cache if it grows too large
-        if len(self.blocks_cache) > 50:
+        if len(self.blocks_cache) > 200:
             self.blocks_cache = {}
 
         self.blocks_cache[block_number] = block
