@@ -18,6 +18,7 @@ from .ethereum_state_provider import EthereumStateProvider, Web3StateProvider
 
 @dataclass
 class ContractFunctionCall:
+    block_hash: str
     block_number: int
     block_timestamp: int
     transaction_hash: str
@@ -166,6 +167,7 @@ class FunctionCallCrawler:
             )
 
             function_call = ContractFunctionCall(
+                block_hash=transaction["blockHash"],
                 block_number=transaction["blockNumber"],
                 block_timestamp=self.ethereum_state_provider.get_block_timestamp(
                     transaction["blockNumber"]

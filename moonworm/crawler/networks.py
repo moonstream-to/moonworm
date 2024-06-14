@@ -6,7 +6,7 @@ try:
         EthereumBlock,
         EthereumLabel,
     )
-    from moonstreamdb.networks import MODELS, Network, tx_raw_types
+    from moonstreamtypes.networks import MODELS, Network, tx_raw_types, MODELS_V3
 
 except ImportError:
     print("this feature requires moonstreamdb which is not installed")

@@ -50,16 +50,22 @@ class Web3StateProvider(EthereumStateProvider):
 
     def __init__(self, w3: Web3):
         self.w3 = w3
+        self.metrics = {
+            "web3_get_block_calls": 0,
+            "web3_get_transaction_receipt_calls": 0,
+        }
 
         self.blocks_cache = {}
 
     def get_transaction_reciept(self, transaction_hash: str) -> Dict[str, Any]:
+        self.metrics["web3_get_transaction_receipt_calls"] += 1
         return self.w3.eth.get_transaction_receipt(transaction_hash)
 
     def get_last_block_number(self) -> int:
         return self.w3.eth.block_number
 
     def _get_block(self, block_number: int) -> Dict[str, Any]:
+        self.metrics["web3_get_block_calls"] += 1
         if block_number in self.blocks_cache:
             return self.blocks_cache[block_number]
         block = self.w3.eth.getBlock(block_number, full_transactions=True)
