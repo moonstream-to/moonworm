@@ -73,6 +73,7 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         tx_raw: tx_raw_types,
     ) -> Dict[str, Any]:
         tx = {
+            "blockHash": tx_raw.block_hash,
             "blockNumber": tx_raw.block_number,
             "from": tx_raw.from_address,
             "gas": tx_raw.gas,

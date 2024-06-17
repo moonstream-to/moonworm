@@ -78,6 +78,7 @@ def _fetch_events_chunk(
         "event": Event name,
         "args": dictionary of event arguments,
         "address": contract address,
+        "blockHash": block hash,
         "blockNumber": block number,
         "transactionHash": transaction hash,
         "logIndex": log index
@@ -115,6 +116,7 @@ def _fetch_events_chunk(
                 "event": raw_event["event"],
                 "args": json.loads(Web3.toJSON(utfy_dict(dict(raw_event["args"])))),
                 "address": raw_event["address"],
+                "blockHash": raw_event["blockHash"],
                 "blockNumber": raw_event["blockNumber"],
                 "transactionHash": raw_event["transactionHash"].hex(),
                 "logIndex": raw_event["logIndex"],
