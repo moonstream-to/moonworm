@@ -198,10 +198,7 @@ class FunctionCallCrawler:
                     method_id = transaction.get("input")[:10]
                     if method_id in self.whitelisted_methods:
                         self.process_transaction(transaction)
-                    else:
-                        print(
-                            f"Function not in ABI, MethodID: {method_id} tx: {transaction['hash'].hex()}. Ignored."
-                        )
+
             self.state.state
         if flush_state:
             self.state.flush()

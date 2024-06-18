@@ -119,10 +119,8 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         block_transactions = {}
 
         for raw_tx in raw_block_transactions:
-
             if block_transactions.get(raw_tx.block_number) is None:
                 block_transactions[raw_tx.block_number] = []
-
             block_transactions[raw_tx.block_number].append(raw_tx)
 
         if block_transactions.get(block_number) is None:
