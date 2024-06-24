@@ -69,11 +69,9 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         return last_block.block_number
 
     @staticmethod
-    def _transform_to_w3_tx(
-        tx_raw: tx_raw_types,
-    ) -> Dict[str, Any]:
+    def _transform_to_w3_tx(tx_raw: tx_raw_types, raw_block) -> Dict[str, Any]:
         tx = {
-            "blockHash": tx_raw.block_hash,
+            "blockHash": raw_block.hash,
             "blockNumber": tx_raw.block_number,
             "from": tx_raw.from_address,
             "gas": tx_raw.gas,
@@ -134,7 +132,9 @@ class MoonstreamEthereumStateProvider(EthereumStateProvider):
         for block, txs in block_transactions.items():
             self.blocks_cache[block] = {
                 "timestamp": blocks[block].timestamp,
-                "transactions": [self._transform_to_w3_tx(tx) for tx in txs],
+                "transactions": [
+                    self._transform_to_w3_tx(tx, blocks[block]) for tx in txs
+                ],
             }
 
         return self.blocks_cache[block_number]
