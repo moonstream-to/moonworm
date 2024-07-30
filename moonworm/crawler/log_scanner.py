@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from eth_abi.codec import ABICodec
 from eth_typing.evm import ChecksumAddress
@@ -135,7 +135,7 @@ def _crawl_events(
     from_block: int,
     to_block: int,
     batch_size: int,
-    contract_address: ChecksumAddress,
+    contract_addresses: Union[ChecksumAddress, List[ChecksumAddress]],
     batch_size_update_threshold: int = 1000,
     max_blocks_batch: int = 10000,
     min_blocks_batch: int = 100,
@@ -148,6 +148,12 @@ def _crawl_events(
     events = []
     current_from_block = from_block
 
+    address_list = (
+        [contract_addresses]
+        if isinstance(contract_addresses, ChecksumAddress)
+        else contract_addresses
+    )  # for backwards compatibility
+
     while current_from_block <= to_block:
         current_to_block = min(current_from_block + batch_size, to_block)
         try:
@@ -156,7 +162,7 @@ def _crawl_events(
                 event_abi,
                 current_from_block,
                 current_to_block,
-                [contract_address],
+                address_list,
             )
             events.extend(events_chunk)
             current_from_block = current_to_block + 1
