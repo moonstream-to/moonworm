@@ -135,7 +135,7 @@ def _crawl_events(
     from_block: int,
     to_block: int,
     batch_size: int,
-    contract_addresses: Union[ChecksumAddress, List[ChecksumAddress]],
+    contract_address: Union[ChecksumAddress, List[ChecksumAddress]],
     batch_size_update_threshold: int = 1000,
     max_blocks_batch: int = 10000,
     min_blocks_batch: int = 100,
@@ -149,9 +149,7 @@ def _crawl_events(
     current_from_block = from_block
 
     address_list = (
-        [contract_addresses]
-        if isinstance(contract_addresses, ChecksumAddress)
-        else contract_addresses
+        [contract_address] if isinstance(contract_address, str) else contract_address
     )  # for backwards compatibility
 
     while current_from_block <= to_block:
